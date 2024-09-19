@@ -18,7 +18,7 @@ class DsToCacheDecorator<D>(
     val dataSource: DataSource<D>,
     cacheSizeInMB: Long,
     private val getSize: ((D) -> Long)? = null,
-    override val logger: Logger = FlexDataSourceManager.defaultLogger,
+    override val logger: Logger = FlexDataSourceManager.logger,
     private val howManyItemsDeleteWhenCacheFullInPercent: Double = 50.0,
     forceNoCheck: Boolean = false,
 ) : Cache<D> {

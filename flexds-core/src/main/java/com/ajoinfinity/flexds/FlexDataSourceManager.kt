@@ -5,7 +5,13 @@ import com.ajoinfinity.flexds.tools.DefaultLogger
 
 class FlexDataSourceManager {
     companion object {
-        val defaultLogger by lazy { DefaultLogger() }
+        private var _logger: Logger = DefaultLogger()
+
+        var logger: Logger
+            get() = _logger
+            set(value) {
+                _logger = value
+            }
 
 
     }

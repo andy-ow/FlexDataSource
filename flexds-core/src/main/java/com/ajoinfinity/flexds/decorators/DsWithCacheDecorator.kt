@@ -10,7 +10,7 @@ import com.ajoinfinity.flexds.FlexDataSourceManager
 class DsWithCacheDecorator<D>  constructor(
     private val dsCache: Cache<D>,
     private val dsWithoutCache: DataSource<D>,
-    override val logger: Logger = FlexDataSourceManager.defaultLogger,
+    override val logger: Logger = FlexDataSourceManager.logger,
 ) : DataSourceWithCache<D> {
 
     override val dataSourceId: String = "${dsWithoutCache.dataSourceId}<Cache: ${dsCache.dataSourceId}>"
