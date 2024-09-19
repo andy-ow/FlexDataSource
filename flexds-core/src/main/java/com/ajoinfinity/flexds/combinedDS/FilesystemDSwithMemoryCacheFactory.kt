@@ -16,7 +16,7 @@ class FilesystemDSwithMemoryCacheFactory<D> {
         val dataType = serializer.descriptor.serialName
         val cache = MemoryDS<D>("cache", dataTypeName = dataType)
         val fsdswc = FilesystemDS<D>(
-            dataSourceId = dataSourceId,
+            fdsId = dataSourceId,
             filesDir = filesDir,
             serializer = serializer,
             dataTypeName = dataType

@@ -12,7 +12,7 @@ class FirebaseRtDatabaseWithMemoryCacheFactory<D>(
 
         return FirebaseRtDatabaseDS<D>(
             database = database,
-            dataSourceId = dataSourceId,
+            fdsId = dataSourceId,
             clazz = clazz
         ).addCache(memoryCache, cacheSizeInMb, )
     }

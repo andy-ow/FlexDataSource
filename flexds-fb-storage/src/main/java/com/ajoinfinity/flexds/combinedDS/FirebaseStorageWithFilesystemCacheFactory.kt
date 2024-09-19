@@ -13,12 +13,12 @@ class FirebaseStorageWithFilesystemCacheFactory<D>(
                cacheDataSourceId: String = "firebase_storage_cache",
                cacheSizeInMb: Long = 10): DataSourceWithCache<D> {
         val filesystemCache = FilesystemDS<D>(
-            dataSourceId = cacheDataSourceId,
+            fdsId = cacheDataSourceId,
             filesDir = cachePath
         )
 
         return FirebaseStorageDS<D>(
-            dataSourceId = dataSourceId,
+            fdsId = dataSourceId,
             firebaseStorage = firebaseStorage,
             logger = FlexDataSourceManager.defaultLogger
         ).addCache(filesystemCache, cacheSizeInMb)

@@ -1,4 +1,4 @@
-package com.ajoinfinity.flexds.tools
+package com.ajoinfinity.flexds.features.logger
 
 import com.ajoinfinity.flexds.Logger
 

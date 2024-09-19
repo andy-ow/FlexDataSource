@@ -1,6 +1,6 @@
-package com.ajoinfinity.flexds.features.fdssize
+package com.ajoinfinity.flexds.features
 
-interface FlexDataSourceSize {
+interface FlexdsSize {
     suspend fun getFlexDsSize(): Result<Long> {
         throw NotImplementedError("Feature is not implemented. Please use DsWithSizeDecorator")
     }

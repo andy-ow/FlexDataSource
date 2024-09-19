@@ -1,7 +1,7 @@
 package com.ajoinfinity.flexds.basedatasources
 
 import com.ajoinfinity.flexds.DataSource
-import com.ajoinfinity.flexds.tools.DefaultLogger
+import com.ajoinfinity.flexds.features.logger.DefaultLogger
 import com.ajoinfinity.flexds.Logger
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -13,7 +13,7 @@ import java.io.IOException
 
 class FilesystemDS<D> (
     filesDir: File,
-    override val dataSourceId: String,
+    override val fdsId: String,
     private val dataClass: D = "some string" as D,
     val serializer: KSerializer<D>? = null,
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = false,
@@ -23,10 +23,10 @@ class FilesystemDS<D> (
 
     private val json: Json = Json { prettyPrint = true }
 
-    override val dsName: String = "LocalStorage<$dataSourceId>"
+    override val name: String = "LocalStorage<$fdsId>"
 
     // Always use a subdirectory relative to context.filesDir
-    private val directory: File = File(filesDir, dataSourceId)
+    private val directory: File = File(filesDir, fdsId)
 
     private val mutex = Mutex()
     init {

@@ -10,13 +10,13 @@ class FirebaseRtDatabaseWithFilesystemCacheFactory<D>(
 ) {
     fun create(path: File, subdir: String, cacheSizeInMb: Long = 10): DataSourceWithCache<D> {
         val filesystemCache = FilesystemDS<D>(
-            dataSourceId = "filesystem_cache",
+            fdsId = "filesystem_cache",
             filesDir = File(path, subdir)
         )
 
         return FirebaseRtDatabaseDS<D>(
             database = database,
-            dataSourceId = "firebase_rt",
+            fdsId = "firebase_rt",
             clazz = clazz
         ).addCache(filesystemCache, cacheSizeInMb)
     }

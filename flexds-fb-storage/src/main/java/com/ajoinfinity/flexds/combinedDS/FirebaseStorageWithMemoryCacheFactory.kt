@@ -11,7 +11,7 @@ class FirebaseStorageWithMemoryCacheFactory<D>(
         val memoryCache = MemoryDS<D>("memory_cache")
 
         return FirebaseStorageDS<D>(
-            dataSourceId = dataSourceId,
+            fdsId = dataSourceId,
             firebaseStorage = firebaseStorage,
             logger = FlexDataSourceManager.defaultLogger
         ).addCache(memoryCache, cacheSizeInMb)

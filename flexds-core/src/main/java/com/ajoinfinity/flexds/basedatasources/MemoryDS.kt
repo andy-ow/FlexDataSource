@@ -9,13 +9,13 @@ import java.io.FileNotFoundException
 
 
 class MemoryDS<D> constructor(
-    override val dataSourceId: String,
+    override val fdsId: String,
     override val dataTypeName: String = "Item",
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = false,
     override val logger: Logger = FlexDataSourceManager.defaultLogger
 ) : DataSource<D> {
 
-    override val dsName: String = "MemoryStorage<$dataSourceId>"
+    override val name: String = "MemoryStorage<$fdsId>"
 
     // Memory storage to hold data
     private val memoryStore: MutableMap<String, Pair<D, Long>> = mutableMapOf()
@@ -29,13 +29,13 @@ class MemoryDS<D> constructor(
 
     override suspend fun containsId(id: String): Result<Boolean> {
         if (id.isBlank()) {
-            return Result.failure(IllegalArgumentException("$dsName: ID cannot be blank"))
+            return Result.failure(IllegalArgumentException("$name: ID cannot be blank"))
         }
         return mutex.withLock {
             try {
                 Result.success(memoryStore.containsKey(id))
             } catch (e: Exception) {
-                logger.logError("$dsName: Error checking if ID exists: $id", e)
+                logger.logError("$name: Error checking if ID exists: $id", e)
                 Result.failure(e)
             }
         }
@@ -43,14 +43,14 @@ class MemoryDS<D> constructor(
 
     override suspend fun save(id: String, data: D): Result<Unit> {
         if (id.isBlank()) {
-            return Result.failure(IllegalArgumentException("$dsName: ID cannot be blank"))
+            return Result.failure(IllegalArgumentException("$name: ID cannot be blank"))
         }
         return mutex.withLock {
             try {
                 memoryStore[id] = data to getCurrentTime()
                 Result.success(Unit)
             } catch (e: Exception) {
-                logger.logError("$dsName: Error saving data with ID: $id", e)
+                logger.logError("$name: Error saving data with ID: $id", e)
                 Result.failure(e)
             }
         }
@@ -58,7 +58,7 @@ class MemoryDS<D> constructor(
 
     override suspend fun findById(id: String): Result<D> {
         if (id.isBlank()) {
-            return Result.failure(IllegalArgumentException("$dsName: ID cannot be blank"))
+            return Result.failure(IllegalArgumentException("$name: ID cannot be blank"))
         }
         return mutex.withLock {
             try {
@@ -68,12 +68,12 @@ class MemoryDS<D> constructor(
                     memoryStore[id] = dataEntry.first to getCurrentTime()
                     Result.success(dataEntry.first)
                 } else {
-                    val errorMsg = "$dsName: $dataTypeName not found: $id"
+                    val errorMsg = "$name: $dataTypeName not found: $id"
                     logger.logError(errorMsg)
                     Result.failure(FileNotFoundException(errorMsg))
                 }
             } catch (e: Exception) {
-                logger.logError("$dsName: Error finding data with ID: $id", e)
+                logger.logError("$name: Error finding data with ID: $id", e)
                 Result.failure(e)
             }
         }
@@ -83,7 +83,7 @@ class MemoryDS<D> constructor(
         try {
             save(id, data)
         } catch (e: Exception) {
-        logger.logError("$dsName: Error while updating", e)
+        logger.logError("$name: Error while updating", e)
         Result.failure(e)
     }
         return Result.success(Unit)
@@ -91,19 +91,19 @@ class MemoryDS<D> constructor(
 
     override suspend fun delete(id: String): Result<Unit> {
         if (id.isBlank()) {
-            return Result.failure(IllegalArgumentException("$dsName: ID cannot be blank"))
+            return Result.failure(IllegalArgumentException("$name: ID cannot be blank"))
         }
         return mutex.withLock {
             try {
                 if (memoryStore.remove(id) != null) {
                     Result.success(Unit)
                 } else {
-                    val errorMsg = "$dsName: $dataTypeName not found: $id"
+                    val errorMsg = "$name: $dataTypeName not found: $id"
                     logger.logError(errorMsg)
                     Result.failure(FileNotFoundException(errorMsg))
                 }
             } catch (e: Exception) {
-                logger.logError("$dsName: Error deleting data with ID: $id", e)
+                logger.logError("$name: Error deleting data with ID: $id", e)
                 Result.failure(e)
             }
         }
@@ -114,7 +114,7 @@ class MemoryDS<D> constructor(
             try {
                 Result.success(memoryStore.keys.toList())
             } catch (e: Exception) {
-                logger.logError("$dsName: Error listing stored IDs", e)
+                logger.logError("$name: Error listing stored IDs", e)
                 Result.failure(e)
             }
         }
@@ -126,7 +126,7 @@ class MemoryDS<D> constructor(
                 val lastModifiedTime = memoryStore.values.map { it.second }.maxOrNull() ?: 0L
                 Result.success(lastModifiedTime)
             } catch (e: Exception) {
-                logger.logError("$dsName: Error getting last modification time", e)
+                logger.logError("$name: Error getting last modification time", e)
                 Result.failure(e)
             }
         }
@@ -137,7 +137,7 @@ class MemoryDS<D> constructor(
             try {
                 Result.success(memoryStore.size)
             } catch (e: Exception) {
-                logger.logError("$dsName: Error getting size", e)
+                logger.logError("$name: Error getting size", e)
                 Result.failure(e)
             }
         }
@@ -175,7 +175,7 @@ class MemoryDS<D> constructor(
 
             // If no instance exists, create a new one and store it in the map
             val newDataSource = MemoryDS<D>(
-                dataSourceId = dataSourceId,
+                fdsId = dataSourceId,
                 dataTypeName = dataTypeName,
                 SHOULD_NOT_BE_USED_AS_CACHE = SHOULD_NOT_BE_USED_AS_CACHE,
                 logger = logger

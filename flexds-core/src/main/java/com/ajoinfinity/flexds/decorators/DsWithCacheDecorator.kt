@@ -13,7 +13,7 @@ class DsWithCacheDecorator<D>  constructor(
     override val logger: Logger = FlexDataSourceManager.logger,
 ) : DataSourceWithCache<D> {
 
-    override val dataSourceId: String = "${dsWithoutCache.dataSourceId}<Cache: ${dsCache.dataSourceId}>"
+    override val fdsId: String = "${dsWithoutCache.fdsId}<Cache: ${dsCache.fdsId}>"
     override val dataTypeName: String = dsWithoutCache.dataTypeName
     override suspend fun containsId(id: String): Result<Boolean> {
         return runCatching {
@@ -23,9 +23,9 @@ class DsWithCacheDecorator<D>  constructor(
         }
     }
 
-    val mainDsName: String = dsWithoutCache.dsName
-    val cacheName: String = dsCache.dsName
-    override val dsName = "$mainDsName(Cache: $cacheName)"
+    val mainDsName: String = dsWithoutCache.name
+    val cacheName: String = dsCache.name
+    override val name = "$mainDsName(Cache: $cacheName)"
     override val SHOULD_NOT_BE_USED_AS_CACHE = dsWithoutCache.SHOULD_NOT_BE_USED_AS_CACHE
     override fun showDataflow() = "${dsCache.showDataflow()}${dsWithoutCache.showDataflow()}"
 
@@ -46,7 +46,7 @@ class DsWithCacheDecorator<D>  constructor(
 //        }
 
         require(!dsCache.SHOULD_NOT_BE_USED_AS_CACHE) {
-            "$dsName: Internal error: $dsCache is or contains a data source which should never act as a cache."
+            "$name: Internal error: $dsCache is or contains a data source which should never act as a cache."
         }
     }
 
@@ -57,7 +57,7 @@ class DsWithCacheDecorator<D>  constructor(
 
     // Delete least recently used files based on percentage
     override suspend fun cacheDeleteLeastUsedItemsByPercentage(percentage: Double): Result<Unit> {
-        logger.log("$dsName: Attempting to delete least used files by $percentage% of cache.")
+        logger.log("$name: Attempting to delete least used files by $percentage% of cache.")
         return dsCache.cacheDeleteLeastUsedItemsByPercentage(percentage)
     }
 
@@ -73,12 +73,12 @@ class DsWithCacheDecorator<D>  constructor(
     override suspend fun save(id: String, data: D): Result<Unit> {
         val cacheResult = dsCache.save(id, data)
         if (cacheResult.isFailure) {
-            logger.logError("$dsName: Failed to save to cache for $dataTypeName $id")
+            logger.logError("$name: Failed to save to cache for $dataTypeName $id")
         }
         val remoteResult = dsWithoutCache.save(id, data)
 
         if (!remoteResult.isSuccess) {
-            val error = "$dsName: Failed to save $dataTypeName"
+            val error = "$name: Failed to save $dataTypeName"
             logger.logError("Internal error: $error")
         }
         return remoteResult
@@ -93,7 +93,7 @@ class DsWithCacheDecorator<D>  constructor(
         totalRetrievals++
 
         if (id.isBlank()) {
-            return Result.failure(IllegalArgumentException("$dsName: $dataTypeName name cannot be blank"))
+            return Result.failure(IllegalArgumentException("$name: $dataTypeName name cannot be blank"))
         }
 
         val localResult = dsCache.findById(id)
@@ -110,7 +110,7 @@ class DsWithCacheDecorator<D>  constructor(
             if (remoteResult.isSuccess) {
                 dsCache.save(id, remoteResult.getOrNull()!!)
             } else {
-                logger.logError("$dsName: $dataTypeName '$id' not available here or in cache ${dsCache.dsName}.")
+                logger.logError("$name: $dataTypeName '$id' not available here or in cache ${dsCache.name}.")
             }
             return remoteResult
         }
@@ -121,11 +121,11 @@ class DsWithCacheDecorator<D>  constructor(
     override suspend fun delete(id: String): Result<Unit> {
         val localResult = dsCache.delete(id)
         val remoteResult = dsWithoutCache.delete(id)
-        if (localResult.isFailure) logger.logError("$dsName: Failed to delete $dataTypeName $id in cache ${dsCache.dsName}.")
+        if (localResult.isFailure) logger.logError("$name: Failed to delete $dataTypeName $id in cache ${dsCache.name}.")
         return if (remoteResult.isSuccess) {
             Result.success(Unit)
         } else {
-            val message = "$dsName: Failed to delete $dataTypeName $id "
+            val message = "$name: Failed to delete $dataTypeName $id "
             logger.logError(message)
             Result.failure(Exception(message))
         }
@@ -171,7 +171,7 @@ class DsWithCacheDecorator<D>  constructor(
     // Print cache hit/miss stats every 100 file retrievals
     private fun printCacheStats() {
         val successRate: Int = (100 * cacheHits.toFloat() / totalRetrievals.toFloat()).toInt()
-        logger.log("$dsName: Cache Stats: ${successRate}% success rate, $cacheHits hits, $cacheMisses misses after $totalRetrievals retrievals.")
+        logger.log("$name: Cache Stats: ${successRate}% success rate, $cacheHits hits, $cacheMisses misses after $totalRetrievals retrievals.")
         // Reset the counters after logging
         //cacheHits = 0
         //cacheMisses = 0

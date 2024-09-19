@@ -9,15 +9,15 @@ import kotlinx.coroutines.tasks.await
 
 class FirebaseRtDatabaseDS<D> constructor(
     database: FirebaseDatabase,
-    override val dataSourceId: String,
+    override val fdsId: String,
     private val clazz: Class<D>,
-    override val dsName: String = "FirebaseRealtimeDb-'$dataSourceId'",
+    override val name: String = "FirebaseRealtimeDb-'$fdsId'",
     override val dataTypeName: String = "Data",
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = true,
     override val logger: Logger = FlexDataSourceManager.defaultLogger,
 ) : DataSource<D> {
 
-    private val root = database.reference.child(dataSourceId)
+    private val root = database.reference.child(fdsId)
     private val lastChangedRef = root.child("last_changed")
     private val nodesRef = root.child(dataTypeName)
 

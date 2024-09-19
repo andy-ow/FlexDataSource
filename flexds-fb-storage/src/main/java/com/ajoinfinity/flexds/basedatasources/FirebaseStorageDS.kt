@@ -14,16 +14,16 @@ import javax.inject.Singleton
 
 @Singleton
 class FirebaseStorageDS<D> @Inject constructor(
-    override val dataSourceId: String,
+    override val fdsId: String,
     firebaseStorage: FirebaseStorage,
     override val logger: Logger = FlexDataSourceManager.defaultLogger
 ) : DataSource<D> {
 
-    override val dsName = "FirebaseStorage"
+    override val name = "FirebaseStorage"
     override val dataTypeName = "File"
     override val SHOULD_NOT_BE_USED_AS_CACHE = true
 
-    private val firebaseStorageRoot: StorageReference = firebaseStorage.reference.child(dataSourceId)
+    private val firebaseStorageRoot: StorageReference = firebaseStorage.reference.child(fdsId)
 
     // Check if the file with the given id exists in Firebase Storage
     override suspend fun containsId(id: String): Result<Boolean> {

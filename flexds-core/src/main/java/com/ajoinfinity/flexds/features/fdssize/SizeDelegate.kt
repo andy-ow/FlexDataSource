@@ -1,14 +1,15 @@
 package com.ajoinfinity.flexds.features.fdssize
 
-import com.ajoinfinity.flexds.FlexDataSource
+import com.ajoinfinity.flexds.Flexds
 import com.ajoinfinity.flexds.FlexDataSourceManager
+import com.ajoinfinity.flexds.features.FlexdsSize
 import com.ajoinfinity.flexds.features.fdssize.SizeDecorator.DataSourceSizeNotInitializedException
 import com.ajoinfinity.flexds.features.fdssize.SizeDecorator.DataSourceSizeUnknownException
 
 class SizeDelegate<D>(
-    val flexds: FlexDataSource<D>,
+    val flexds: Flexds<D>,
     val getItemSize: (D) -> Long,
-): FlexDataSourceSize {
+): FlexdsSize {
     private val logger = FlexDataSourceManager.logger
     private val NOT_INITIALIZED = -1L
     private val UNKNOWN = -2L
@@ -87,7 +88,7 @@ class SizeDelegate<D>(
                 .sumOf { it.getOrThrow() }
             dataSourceSize.initialize(sum)
         } catch(e: Exception) {
-            logger.logError("${flexds.dsName}: Could not calculate datasource size", e)
+            logger.logError("${flexds.name}: Could not calculate datasource size", e)
         }
     }
 

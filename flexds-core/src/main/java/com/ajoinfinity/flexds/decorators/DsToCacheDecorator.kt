@@ -30,11 +30,11 @@ class DsToCacheDecorator<D>(
         return getSize?.invoke(data) ?: SizeUtils.getSize(data)
     }
 
-    override val dsName: String = "${dataSource.dsName}-cache"
+    override val name: String = "${dataSource.name}-cache"
     override val dataTypeName: String = dataSource.dataTypeName
 
 
-    override val dataSourceId: String = dataSource.dataSourceId
+    override val fdsId: String = dataSource.fdsId
 
 
     private var maxCacheSizeInBytes: Long? = cacheSizeInMB * 1024 * 1024
@@ -51,18 +51,18 @@ class DsToCacheDecorator<D>(
     // Set the maximum cache size in MB (convert to bytes)
     override fun cacheSetMaxSize(maxSizeInMB: Long?) {
         maxCacheSizeInBytes = maxSizeInMB?.let { it * 1024 * 1024 }
-        logger.log("$dsName: Cache max size set to ${maxSizeInMB ?: "unlimited"} MB.")
+        logger.log("$name: Cache max size set to ${maxSizeInMB ?: "unlimited"} MB.")
     }
 
     // Delete randomly half of the files
     override suspend fun cacheDeleteLeastUsedItemsByPercentage(percentage: Double): Result<Unit> {
-        logger.log("$dsName: Attempting to randomly delete $percentage% of files in the cache.")
-        logger.log("$dsName: Current cache usage: $currentCacheUsageInBytes bytes.")
+        logger.log("$name: Attempting to randomly delete $percentage% of files in the cache.")
+        logger.log("$name: Current cache usage: $currentCacheUsageInBytes bytes.")
         val listFilesResult = dataSource.listStoredIds()
 
         if (listFilesResult.isSuccess) {
             val allFiles = listFilesResult.getOrNull() ?: emptyList()
-            logger.log("$dsName: Number of items stored: ${allFiles.size}")
+            logger.log("$name: Number of items stored: ${allFiles.size}")
 
             if (allFiles.isNotEmpty()) {
                 // Determine the number of files to remove
@@ -75,22 +75,22 @@ class DsToCacheDecorator<D>(
                 filesToDelete.forEach { id ->
                     val deleteResult = dataSource.delete(id)
                     if (deleteResult.isSuccess) {
-                        logger.log("$dsName: Deleted $dataTypeName: $id")
+                        logger.log("$name: Deleted $dataTypeName: $id")
                     } else {
-                        logger.logError("$dsName: Failed to delete $dataTypeName: $id")
+                        logger.logError("$name: Failed to delete $dataTypeName: $id")
                     }
                 }
-                logger.log("$dsName: Cleaning finished.")
-                logger.log("$dsName: Current cache usage: $currentCacheUsageInBytes bytes.")
+                logger.log("$name: Cleaning finished.")
+                logger.log("$name: Current cache usage: $currentCacheUsageInBytes bytes.")
                 val allFilesAfterCleaning = listFilesResult.getOrNull() ?: emptyList()
-                logger.log("$dsName: Number of items stored: ${allFilesAfterCleaning.size}")
+                logger.log("$name: Number of items stored: ${allFilesAfterCleaning.size}")
                 return Result.success(Unit)
             } else {
-                logger.log("$dsName: No ${dataTypeName}s found to delete.")
+                logger.log("$name: No ${dataTypeName}s found to delete.")
                 return Result.success(Unit)
             }
         } else {
-            val error = "$dsName: Failed to list ${dataTypeName}s in the cache."
+            val error = "$name: Failed to list ${dataTypeName}s in the cache."
             logger.logError(error)
             return Result.failure(Exception(error))
         }
@@ -111,9 +111,9 @@ class DsToCacheDecorator<D>(
         // Cache size logic: check if we can fit the file in cache
         if (maxCacheSizeInBytes != null) {
             if (currentCacheUsageInBytes + getSizeOrDefault(data) > maxCacheSizeInBytes!!) {
-                    logger.log("$dsName: File too big to cache.")
+                    logger.log("$name: File too big to cache.")
                     if ((cacheShowPercentageUsed().getOrNull()?.toInt() ?: 0) > 10) {
-                        logger.log("$dsName: Removing some files.")
+                        logger.log("$name: Removing some files.")
                         cacheDeleteLeastUsedItemsByPercentage(howManyItemsDeleteWhenCacheFullInPercent)
                 }
             }
@@ -124,7 +124,7 @@ class DsToCacheDecorator<D>(
             // Update cache size tracking
             currentCacheUsageInBytes += getSizeOrDefault(data)
         } else {
-            logger.log("$dsName: Cannot save file in cache.")
+            logger.log("$name: Cannot save file in cache.")
         }
         return result
     }
@@ -163,7 +163,7 @@ class DsToCacheDecorator<D>(
                 for (id in ids) {
                     val itemResult = dataSource.findById(id)
                     if (itemResult.isFailure) {
-                        val message = "$dsName: Failed to find item with id $id while calculating cache size."
+                        val message = "$name: Failed to find item with id $id while calculating cache size."
                         logger.logError(message)
                         return Result.failure(itemResult.exceptionOrNull() ?: IllegalStateException(message))
                     }
@@ -173,7 +173,7 @@ class DsToCacheDecorator<D>(
                 currentCacheUsageInBytes = totalSize
                 return Result.success(currentCacheUsageInBytes)
             } else {
-                val message = "$dsName: Failed to list stored IDs while calculating cache size."
+                val message = "$name: Failed to list stored IDs while calculating cache size."
                 logger.logError(message)
                 return Result.failure(IllegalStateException(message))
             }

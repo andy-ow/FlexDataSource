@@ -14,14 +14,14 @@ class FirebaseStorageWithBothCachesFactory<D>(
                filesystemCacheSizeInMb: Long = 50,
                memoryCacheSizeInMb: Long = 5): DataSourceWithCache<D> {
         val filesystemCache = FilesystemDS<D>(
-            dataSourceId = cacheDataSourceId,
+            fdsId = cacheDataSourceId,
             filesDir = path
         )
 
         val memoryCache = MemoryDS<D>("memory_cache")
 
         return FirebaseStorageDS<D>(
-            dataSourceId = dataSourceId,
+            fdsId = dataSourceId,
             firebaseStorage = firebaseStorage,
             logger = FlexDataSourceManager.defaultLogger
         )

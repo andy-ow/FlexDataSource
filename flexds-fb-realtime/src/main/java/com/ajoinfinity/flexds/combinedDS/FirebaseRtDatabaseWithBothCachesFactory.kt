@@ -10,7 +10,7 @@ class FirebaseRtDatabaseWithBothCachesFactory<D>(
 ) {
     fun create(path: File, cacheDataSourceId: String = "firebase_storage_cache", dataSourceId: String = "firebase_storage", filesystemCacheSizeInMb: Long = 50, memoryCacheSizeInMb: Long = 5): DataSourceWithCache<D> {
         val filesystemCache = FilesystemDS<D>(
-            dataSourceId = cacheDataSourceId,
+            fdsId = cacheDataSourceId,
             filesDir = path
         )
 
@@ -18,7 +18,7 @@ class FirebaseRtDatabaseWithBothCachesFactory<D>(
 
         return FirebaseRtDatabaseDS<D>(
             database = database,
-            dataSourceId = dataSourceId,
+            fdsId = dataSourceId,
             clazz = clazz
         )
             .addCache(filesystemCache, filesystemCacheSizeInMb) // First apply filesystem cache

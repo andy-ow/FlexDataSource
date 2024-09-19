@@ -1,12 +1,12 @@
 package com.ajoinfinity.flexds.features.fdssize
 
-import com.ajoinfinity.flexds.FlexDataSource
+import com.ajoinfinity.flexds.Flexds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class SizeDecorator<D>(
-    private val flexDataSource: FlexDataSource<D>,
+    private val flexDataSource: Flexds<D>,
     private val getItemSize: (D) -> Long,
     private val sizeDelegate: SizeDelegate<D> = SizeDelegate(flexDataSource, getItemSize)
 ): BaseSizeDecorator<D>(flexDataSource) {
