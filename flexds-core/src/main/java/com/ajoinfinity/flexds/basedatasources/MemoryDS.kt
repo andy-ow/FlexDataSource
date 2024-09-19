@@ -1,7 +1,7 @@
 package com.ajoinfinity.flexds.basedatasources
 
-import com.ajoinfinity.flexds.DataSource
 import com.ajoinfinity.flexds.FlexDataSourceManager
+import com.ajoinfinity.flexds.Flexds
 import com.ajoinfinity.flexds.Logger
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -12,8 +12,7 @@ class MemoryDS<D> constructor(
     override val fdsId: String,
     override val dataTypeName: String = "Item",
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = false,
-    override val logger: Logger = FlexDataSourceManager.defaultLogger
-) : DataSource<D> {
+) : Flexds<D> {
 
     override val name: String = "MemoryStorage<$fdsId>"
 
@@ -41,14 +40,14 @@ class MemoryDS<D> constructor(
         }
     }
 
-    override suspend fun save(id: String, data: D): Result<Unit> {
+    override suspend fun save(id: String, data: D): Result<D> {
         if (id.isBlank()) {
             return Result.failure(IllegalArgumentException("$name: ID cannot be blank"))
         }
-        return mutex.withLock {
-            try {
+        mutex.withLock {
+            return try {
                 memoryStore[id] = data to getCurrentTime()
-                Result.success(Unit)
+                Result.success(data)
             } catch (e: Exception) {
                 logger.logError("$name: Error saving data with ID: $id", e)
                 Result.failure(e)
@@ -79,24 +78,24 @@ class MemoryDS<D> constructor(
         }
     }
 
-    override suspend fun update(id: String, data: D): Result<Unit> {
+    override suspend fun update(id: String, data: D): Result<D> {
         try {
             save(id, data)
         } catch (e: Exception) {
         logger.logError("$name: Error while updating", e)
         Result.failure(e)
     }
-        return Result.success(Unit)
+        return Result.success(data)
     }
 
-    override suspend fun delete(id: String): Result<Unit> {
+    override suspend fun delete(id: String): Result<String> {
         if (id.isBlank()) {
             return Result.failure(IllegalArgumentException("$name: ID cannot be blank"))
         }
-        return mutex.withLock {
-            try {
+        mutex.withLock {
+            return try {
                 if (memoryStore.remove(id) != null) {
-                    Result.success(Unit)
+                    Result.success(id)
                 } else {
                     val errorMsg = "$name: $dataTypeName not found: $id"
                     logger.logError(errorMsg)
@@ -106,6 +105,13 @@ class MemoryDS<D> constructor(
                 logger.logError("$name: Error deleting data with ID: $id", e)
                 Result.failure(e)
             }
+        }
+    }
+
+    override suspend fun deleteAll(): Result<Unit> {
+        return mutex.withLock {
+            memoryStore.clear()
+            Result.success(Unit)
         }
     }
 
@@ -120,7 +126,7 @@ class MemoryDS<D> constructor(
         }
     }
 
-    override suspend fun getTimeLastModification(): Result<Long> {
+    override suspend fun getLastModificationTime(): Result<Long> {
         return mutex.withLock {
             try {
                 val lastModifiedTime = memoryStore.values.map { it.second }.maxOrNull() ?: 0L
@@ -140,49 +146,6 @@ class MemoryDS<D> constructor(
                 logger.logError("$name: Error getting size", e)
                 Result.failure(e)
             }
-        }
-    }
-
-    companion object {
-
-        // A map to store singletons of MemoryDS keyed by dataSourceId
-        private val memoryDataSourceCache = mutableMapOf<String, DataSource<*>>()
-
-        @Suppress("UNCHECKED_CAST")
-        fun <D> createMemoryDataSource(
-            dataSourceId: String,
-            dataTypeName: String = "Item",
-            SHOULD_NOT_BE_USED_AS_CACHE: Boolean = false,
-            logger: Logger = FlexDataSourceManager.defaultLogger
-        ): DataSource<D> {
-            // Check if an instance for the given dataSourceId already exists
-            val existingDataSource = memoryDataSourceCache[dataSourceId]
-
-            if (existingDataSource != null) {
-                // If the instance exists, ensure that all other parameters match
-                val memoryDS = existingDataSource as MemoryDS<D> // Safe cast, as we store only MemoryDS
-
-                if (memoryDS.dataTypeName != dataTypeName ||
-                    memoryDS.SHOULD_NOT_BE_USED_AS_CACHE != SHOULD_NOT_BE_USED_AS_CACHE ||
-                    memoryDS.logger != logger) {
-
-                    throw IllegalStateException("A MemoryDS with dataSourceId '$dataSourceId' already exists but the provided parameters do not match the existing instance.")
-                }
-
-                // If all parameters match, return the existing instance
-                return memoryDS
-            }
-
-            // If no instance exists, create a new one and store it in the map
-            val newDataSource = MemoryDS<D>(
-                fdsId = dataSourceId,
-                dataTypeName = dataTypeName,
-                SHOULD_NOT_BE_USED_AS_CACHE = SHOULD_NOT_BE_USED_AS_CACHE,
-                logger = logger
-            )
-            memoryDataSourceCache[dataSourceId] = newDataSource
-
-            return newDataSource
         }
     }
 }

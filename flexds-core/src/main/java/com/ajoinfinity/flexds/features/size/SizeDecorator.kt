@@ -1,6 +1,7 @@
-package com.ajoinfinity.flexds.features.fdssize
+package com.ajoinfinity.flexds.features.size
 
 import com.ajoinfinity.flexds.Flexds
+import com.ajoinfinity.flexds.features.FlexdsSize
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -9,14 +10,14 @@ class SizeDecorator<D>(
     override val fds: Flexds<D>,
     private val getItemSize: (D) -> Long,
     private val sizeDelegate: SizeDelegate<D> = SizeDelegate(fds, getItemSize)
-): BaseSizeDecorator<D>(fds) {
+): BaseSizeDecorator<D>(fds), FlexdsSize by sizeDelegate{
     class DataSourceSizeNotInitializedException: Exception("Datasource size not initialized")
     class DataSourceSizeUnknownException: Exception("Datasource size is unknown")
 
     init {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                sizeDelegate.getFlexDsSize()
+                sizeDelegate.getFlexdsSize()
                 val message = "SizeDecorator.kt: SizeDecorator was already applied."
                 val e = IllegalArgumentException(message)
                 logger.logError(message, e)

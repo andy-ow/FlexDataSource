@@ -1,6 +1,6 @@
 package com.ajoinfinity.flexds.basedatasources
 
-import com.ajoinfinity.flexds.DataSource
+import com.ajoinfinity.flexds.Flexds
 import com.ajoinfinity.flexds.features.logger.DefaultLogger
 import com.ajoinfinity.flexds.Logger
 import kotlinx.coroutines.sync.Mutex
@@ -18,8 +18,7 @@ class FilesystemDS<D> (
     val serializer: KSerializer<D>? = null,
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = false,
     override val dataTypeName: String = "File",
-    override val logger: Logger = DefaultLogger(),
-) : DataSource<D> {
+) : Flexds<D> {
 
     private val json: Json = Json { prettyPrint = true }
 
@@ -53,9 +52,9 @@ class FilesystemDS<D> (
         }
     }
 
-    override suspend fun save(id: String, data: D): Result<Unit> {
-        return mutex.withLock {
-            try {
+    override suspend fun save(id: String, data: D): Result<D> {
+        mutex.withLock {
+           return try {
                 val file = File(directory, id)
                 when (data) {
                     is ByteArray -> file.writeBytes(data)
@@ -68,7 +67,7 @@ class FilesystemDS<D> (
                         } ?: throw IllegalArgumentException("Unsupported type: ${data!!::class.java}")
                     }
                 }
-                Result.success(Unit)
+                Result.success(data)
             } catch (e: IOException) {
                 val errorMsg = "Failed to save file with id '$id': ${e.message}"
                 logger.logError(errorMsg, e)
@@ -115,18 +114,18 @@ class FilesystemDS<D> (
     }
 
 
-    override suspend fun update(id: String, data: D): Result<Unit> {
+    override suspend fun update(id: String, data: D): Result<D> {
         return save(id, data)
     }
 
-    override suspend fun delete(id: String): Result<Unit> {
-        return mutex.withLock {
-            try {
+    override suspend fun delete(id: String): Result<String> {
+        mutex.withLock {
+            return try {
                 val file = File(directory, id)
                 if (file.exists()) {
                     val deleted = file.delete()
                     if (deleted) {
-                        Result.success(Unit)
+                        Result.success(id)
                     } else {
                         val errorMsg = "Failed to delete file with id '$id'"
                         logger.logError(errorMsg)
@@ -156,7 +155,7 @@ class FilesystemDS<D> (
         }
     }
 
-    override suspend fun getTimeLastModification(): Result<Long> {
+    override suspend fun getLastModificationTime(): Result<Long> {
         return mutex.withLock {
             try {
                 val lastModifiedTime = directory.listFiles()

@@ -32,13 +32,26 @@ class ListOfStoredIdsDecorator<D>(
     }
 
     override suspend fun containsId(id: String): Result<Boolean> {
+        // If the id is found in the cache, return immediately
         return storedIds?.let { ids ->
-            Result.success(ids.contains(id))
+            if (ids.contains(id)) {
+                Result.success(true)  // Return true immediately if found in cache
+            } else {
+                // If not in the cache, check in fds
+                val isContainedInFds = fds.containsId(id).getOrElse { false }
+                if (isContainedInFds) {
+                    // If the id is found in fds but not in cache, invalidate cache
+                    invalidateStoredIds()
+                }
+                Result.success(isContainedInFds)
+            }
         } ?: run {
+            // If storedIds is null, retrieve from fds and cache it
             invalidateStoredIds()
             fds.containsId(id)
         }
     }
+
 
     override suspend fun findById(id: String): Result<D> {
         val result = fds.findById(id)

@@ -2,6 +2,7 @@ package com.ajoinfinity.flexds.features.getdblastmodificationtime
 
 import com.ajoinfinity.flexds.Flexds
 import com.ajoinfinity.flexds.Logger
+import com.ajoinfinity.flexds.features.FlexdsGetDbLastModificationTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -9,7 +10,7 @@ import kotlinx.coroutines.launch
 class GetDbLastModificationTimeDelegate<D>(
     private val dbLastModificationTimeFds: Flexds<String>,  // For storing the last modification time
     private val fds: Flexds<D>  // The main data source
-) {
+): FlexdsGetDbLastModificationTime {
     private val logger: Logger = fds.logger
     private var lastModificationTime: Long? = null
 
@@ -36,7 +37,7 @@ class GetDbLastModificationTimeDelegate<D>(
     }
 
     // Get the time, first checking the cache, otherwise fetching from the dbLastModificationTimeFds
-    suspend fun getTimeLastModification(): Result<Long> {
+    override suspend fun getLastModificationTime(): Result<Long> {
         return lastModificationTime?.let {
             Result.success(it)
         } ?: run {

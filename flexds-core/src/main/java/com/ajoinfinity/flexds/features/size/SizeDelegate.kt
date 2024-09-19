@@ -1,10 +1,10 @@
-package com.ajoinfinity.flexds.features.fdssize
+package com.ajoinfinity.flexds.features.size
 
 import com.ajoinfinity.flexds.Flexds
 import com.ajoinfinity.flexds.FlexDataSourceManager
 import com.ajoinfinity.flexds.features.FlexdsSize
-import com.ajoinfinity.flexds.features.fdssize.SizeDecorator.DataSourceSizeNotInitializedException
-import com.ajoinfinity.flexds.features.fdssize.SizeDecorator.DataSourceSizeUnknownException
+import com.ajoinfinity.flexds.features.size.SizeDecorator.DataSourceSizeNotInitializedException
+import com.ajoinfinity.flexds.features.size.SizeDecorator.DataSourceSizeUnknownException
 
 class SizeDelegate<D>(
     val flexds: Flexds<D>,
@@ -43,6 +43,11 @@ class SizeDelegate<D>(
             add(-change)
         }
     }
+
+    override suspend fun getItemSize(id: String): Result<Long> {
+        return getSizeFromHashMap(id)
+    }
+
     internal suspend fun getSizeFromHashMap(id: String): Result<Long> {
         return try {
             sizeMap[id]?.let {
@@ -73,7 +78,7 @@ class SizeDelegate<D>(
         }
     }
 
-    override suspend fun getFlexDsSize(): Result<Long> {
+    override suspend fun getFlexdsSize(): Result<Long> {
         if (dataSourceSize.size < 0) recalculateDataSourceSize()
         if (dataSourceSize.size == NOT_INITIALIZED) return Result.failure(
             DataSourceSizeNotInitializedException()
@@ -81,6 +86,7 @@ class SizeDelegate<D>(
         if (dataSourceSize.size == UNKNOWN) return Result.failure(DataSourceSizeUnknownException())
         return Result.success(dataSourceSize.size)
     }
+
     private suspend fun recalculateDataSourceSize() {
         dataSourceSize.invalidate()
         try {
@@ -92,7 +98,7 @@ class SizeDelegate<D>(
         }
     }
 
-    interface DataSourceSize {
+    internal interface DataSourceSize {
         val size: Long
 
         fun initialize(initValue: Long)
