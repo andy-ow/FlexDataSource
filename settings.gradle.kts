@@ -14,6 +14,7 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        mavenLocal()
         google()
         mavenCentral()
     }
@@ -22,5 +23,5 @@ dependencyResolutionManagement {
 rootProject.name = "FlexDataSource"
 include(":app")
 include(":flexds-core")
-include(":flexds-fbstorage")
-include(":flexds-fbrealtime")
+include(":flexds-fb-storage")
+include(":flexds-fb-realtime")

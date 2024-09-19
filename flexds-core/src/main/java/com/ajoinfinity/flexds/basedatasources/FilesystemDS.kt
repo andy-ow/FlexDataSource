@@ -1,7 +1,7 @@
 package com.ajoinfinity.flexds.basedatasources
 
 import com.ajoinfinity.flexds.DataSource
-import com.ajoinfinity.flexds.DefaultLogger
+import com.ajoinfinity.flexds.tools.DefaultLogger
 import com.ajoinfinity.flexds.Logger
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -15,11 +15,11 @@ class FilesystemDS<D> (
     filesDir: File,
     override val dataSourceId: String,
     private val dataClass: D = "some string" as D,
-    private val serializer: KSerializer<D>? = null,
+    val serializer: KSerializer<D>? = null,
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = false,
     override val dataTypeName: String = "File",
     override val logger: Logger = DefaultLogger(),
-) : DataSource<D>() {
+) : DataSource<D> {
 
     private val json: Json = Json { prettyPrint = true }
 
@@ -30,7 +30,7 @@ class FilesystemDS<D> (
 
     private val mutex = Mutex()
     init {
-        require(dataClass is String || dataClass is ByteArray || dataClass is kotlinx.serialization.Serializable) {
+        require(dataClass is String || dataClass is ByteArray || serializer != null) {
             "D must be either String, ByteArray, or Serializable"
         }
         // Ensure the directory exists or try to create it
@@ -170,7 +170,7 @@ class FilesystemDS<D> (
         }
     }
 
-    override suspend fun getSize(): Result<Int> {
+    override suspend fun getNumberOfElements(): Result<Int> {
         return mutex.withLock {
             try {
                 val fileCount = directory.listFiles()?.size ?: 0

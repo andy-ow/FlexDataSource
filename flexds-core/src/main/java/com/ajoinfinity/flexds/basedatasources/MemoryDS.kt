@@ -1,26 +1,25 @@
-package com.ajoinfinity.poleconyksiegowy.data.datasource.baseDS
+package com.ajoinfinity.flexds.basedatasources
 
 import com.ajoinfinity.flexds.DataSource
-import com.ajoinfinity.flexds.DefaultLogger
-import com.ajoinfinity.flexds.FlexDataSource
+import com.ajoinfinity.flexds.FlexDataSourceManager
 import com.ajoinfinity.flexds.Logger
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.FileNotFoundException
-import kotlin.math.ceil
 
 
 class MemoryDS<D> constructor(
     override val dataSourceId: String,
     override val dataTypeName: String = "Item",
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = false,
-    override val logger: Logger = FlexDataSource.defaultLogger
-) : DataSource<D>() {
+    override val logger: Logger = FlexDataSourceManager.defaultLogger
+) : DataSource<D> {
 
     override val dsName: String = "MemoryStorage<$dataSourceId>"
 
     // Memory storage to hold data
     private val memoryStore: MutableMap<String, Pair<D, Long>> = mutableMapOf()
+
 
     // Mutex for thread safety
     private val mutex = Mutex()
@@ -133,7 +132,7 @@ class MemoryDS<D> constructor(
         }
     }
 
-    override suspend fun getSize(): Result<Int> {
+    override suspend fun getNumberOfElements(): Result<Int> {
         return mutex.withLock {
             try {
                 Result.success(memoryStore.size)
@@ -154,7 +153,7 @@ class MemoryDS<D> constructor(
             dataSourceId: String,
             dataTypeName: String = "Item",
             SHOULD_NOT_BE_USED_AS_CACHE: Boolean = false,
-            logger: Logger = FlexDataSource.defaultLogger
+            logger: Logger = FlexDataSourceManager.defaultLogger
         ): DataSource<D> {
             // Check if an instance for the given dataSourceId already exists
             val existingDataSource = memoryDataSourceCache[dataSourceId]

@@ -3,6 +3,8 @@ import java.util.Properties
 
 val artifactId = "flexds-core"
 val groupId = "com.ajoinfinity.flexds"
+val myversion = "0.0.3"
+
 group = groupId
 
 plugins {
@@ -28,21 +30,25 @@ project.afterEvaluate {
         }
         publications {
             create<MavenPublication>("library") {
-                from(components["release"]) // For Kotlin/Java library
+                from(components["java"]) // For Kotlin/Java library
                 groupId = groupId
                 artifactId = artifactId
-                version = android.defaultConfig.versionName
+                version = myversion
             }
         }
     }
 }
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
-
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
 dependencies {
-
+    implementation(libs.kotlin.stdlib.jdk8)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.serialization.json)
 }

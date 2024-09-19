@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    kotlin("plugin.serialization") version "1.9.25"
 }
 
 android {
@@ -36,7 +37,13 @@ android {
 }
 
 dependencies {
+    //implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+    implementation("com.ajoinfinity.flexds:flexds-core:0.0.3")
 
+    //implementation(project(":flexds-core"))
+    implementation(project(":flexds-fb-realtime"))
+    implementation(project(":flexds-fb-storage"))
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

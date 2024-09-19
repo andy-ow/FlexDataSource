@@ -1,20 +1,28 @@
 package com.ajoinfinity.flexds.combinedDS
 
-import com.ajoinfinity.flexds.DataSource
-import com.ajoinfinity.flexds.DataSourceWithCache
+import com.ajoinfinity.flexds.datasources.DataSourceWithCache
 import com.ajoinfinity.flexds.basedatasources.FilesystemDS
-import com.ajoinfinity.poleconyksiegowy.data.datasource.baseDS.MemoryDS
+import com.ajoinfinity.flexds.basedatasources.MemoryDS
+import kotlinx.serialization.KSerializer
 import java.io.File
-import java.nio.file.Files
 
 
 class FilesystemDSwithMemoryCacheFactory<D> {
-    fun create(path: File, subdir: String, cacheSizeInMb: Int = 10): DataSourceWithCache<D> {
-        val cache = MemoryDS<D>("cache")
-        return FilesystemDS<D>(
-            dataSourceId = "data",
-            filesDir = File("/tmp"),
+    fun create(filesDir: File,
+               dataSourceId: String,
+               serializer: KSerializer<D>,
+               getSize: (D) -> Long,
+               cacheSizeInMb: Long = 10): DataSourceWithCache<D> {
+        val dataType = serializer.descriptor.serialName
+        val cache = MemoryDS<D>("cache", dataTypeName = dataType)
+        val fsdswc = FilesystemDS<D>(
+            dataSourceId = dataSourceId,
+            filesDir = filesDir,
+            serializer = serializer,
+            dataTypeName = dataType
             )
-            .addCache(cache, 10)
+            .addCache(cache, getSize = getSize, cacheSizeInMb = cacheSizeInMb, )
+        println("Datasource.showDataflow: ${fsdswc.showDataflow()}")
+        return fsdswc
     }
 }
