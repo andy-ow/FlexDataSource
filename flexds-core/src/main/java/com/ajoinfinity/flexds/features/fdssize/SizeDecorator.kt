@@ -6,10 +6,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class SizeDecorator<D>(
-    private val flexDataSource: Flexds<D>,
+    override val fds: Flexds<D>,
     private val getItemSize: (D) -> Long,
-    private val sizeDelegate: SizeDelegate<D> = SizeDelegate(flexDataSource, getItemSize)
-): BaseSizeDecorator<D>(flexDataSource) {
+    private val sizeDelegate: SizeDelegate<D> = SizeDelegate(fds, getItemSize)
+): BaseSizeDecorator<D>(fds) {
     class DataSourceSizeNotInitializedException: Exception("Datasource size not initialized")
     class DataSourceSizeUnknownException: Exception("Datasource size is unknown")
 
@@ -28,7 +28,7 @@ class SizeDecorator<D>(
     }
 
     override suspend fun findById(id: String): Result<D> {
-        val item = flexDataSource.findById(id)
+        val item = fds.findById(id)
         if (item.isSuccess) try {
             sizeDelegate.insertSizeInHashMapIfNotExist(id, item.getOrThrow())
         } catch (e: Exception) {
@@ -38,8 +38,8 @@ class SizeDecorator<D>(
         return item
     }
 
-    override suspend fun delete(id: String): Result<Unit> {
-        val result = flexDataSource.delete(id)
+    override suspend fun delete(id: String): Result<String> {
+        val result = fds.delete(id)
         if (result.isFailure) sizeDelegate.dataSourceSize.invalidate()
         else try {
             val change = sizeDelegate.getSizeFromHashMap(id).getOrThrow()
@@ -52,8 +52,8 @@ class SizeDecorator<D>(
         return result
     }
 
-    override suspend fun update(id: String, data: D): Result<Unit> {
-        val result = flexDataSource.update(id, data)
+    override suspend fun update(id: String, data: D): Result<D> {
+        val result = fds.update(id, data)
         if (result.isFailure) sizeDelegate.dataSourceSize.invalidate()
         else try {
             val oldValue = sizeDelegate.getSizeFromHashMap(id).getOrThrow()
@@ -68,8 +68,8 @@ class SizeDecorator<D>(
         return result
     }
 
-    override suspend fun save(id: String, data: D): Result<Unit> {
-        val result = flexDataSource.save(id, data)
+    override suspend fun save(id: String, data: D): Result<D> {
+        val result = fds.save(id, data)
         if (result.isFailure) sizeDelegate.dataSourceSize.invalidate()
         else try {
             val newValue = sizeDelegate.saveSizeInHashMap(id, data).getOrThrow()

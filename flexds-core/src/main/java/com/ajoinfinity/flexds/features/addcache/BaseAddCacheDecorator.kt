@@ -1,9 +1,9 @@
-package com.ajoinfinity.flexds.features.addsecondaryfds
+package com.ajoinfinity.flexds.features.addcache
 
 import com.ajoinfinity.flexds.Flexds
 import com.ajoinfinity.flexds.Logger
 
-abstract class BaseAddSecondaryFdsDecorator<D>(
+abstract class BaseAddCacheDecorator<D>(
     protected val fds: Flexds<D>,
     protected val secondaryFds: Flexds<D>,
     ): Flexds<D> {
@@ -19,8 +19,8 @@ abstract class BaseAddSecondaryFdsDecorator<D>(
         get() = fds.dataTypeName
 
     override suspend fun listStoredIds(): Result<List<String>> = fds.listStoredIds()
-    override suspend fun getTimeLastModification(): Result<Long> = fds.getTimeLastModification()
+    override suspend fun getLastModificationTime(): Result<Long> = fds.getLastModificationTime()
     override suspend fun getNumberOfElements(): Result<Int> = fds.getNumberOfElements()
-    override suspend fun update(id: String, data: D): Result<Unit> = update(id, data)
-    override suspend fun save(id: String, data: D): Result<Unit> = save(id, data)
+    override suspend fun update(id: String, data: D): Result<D> = update(id, data)
+    override suspend fun save(id: String, data: D): Result<D> = save(id, data)
 }

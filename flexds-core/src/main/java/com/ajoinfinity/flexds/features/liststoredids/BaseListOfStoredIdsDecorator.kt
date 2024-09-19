@@ -1,9 +1,9 @@
-package com.ajoinfinity.flexds.features.fdssize
+package com.ajoinfinity.flexds.features.liststoredids
 
 import com.ajoinfinity.flexds.Flexds
 import com.ajoinfinity.flexds.Logger
 
-abstract class BaseSizeDecorator<D>(open val fds: Flexds<D>): Flexds<D> {
+abstract class BaseListOfStoredIdsDecorator<D>(private val fds: Flexds<D>): Flexds<D> {
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean
         get() = fds.SHOULD_NOT_BE_USED_AS_CACHE
     override val logger: Logger

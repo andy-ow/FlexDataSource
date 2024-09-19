@@ -2,8 +2,9 @@ package com.ajoinfinity.flexds.features
 
 import com.ajoinfinity.flexds.FlexDataSourceManager
 import com.ajoinfinity.flexds.Logger
+import com.ajoinfinity.flexds.features.logger.FlexdsLogger
 
-interface FlexdsCore<D> {
+interface FlexdsCore<D>: FlexdsLogger, FlexdsDelete<D> {
     val SHOULD_NOT_BE_USED_AS_CACHE: Boolean
     val fdsId: String
     val name: String
@@ -13,6 +14,6 @@ interface FlexdsCore<D> {
     suspend fun findById(id: String): Result<D>
     suspend fun save(id: String, data: D): Result<D>
     suspend fun update(id: String, data: D): Result<D>
-    suspend fun delete(id: String): Result<String>
+    override suspend fun delete(id: String): Result<String>
 
 }
