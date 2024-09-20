@@ -4,12 +4,11 @@ import java.util.Properties
 val artifactId = "flexds-fb-realtime"
 val groupId = "com.ajoinfinity.flexds"
 group = groupId
-val myversion = "0.0.2"
+val myversion = "0.0.5"
 
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    id("org.jetbrains.kotlin.kapt")
     `maven-publish`
 }
 
@@ -68,13 +67,13 @@ android {
 }
 
 dependencies {
+    implementation(project(":flexds-core"))
     implementation(libs.kotlinx.serialization.json)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.database.ktx)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
-    implementation(project(":flexds-core"))
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

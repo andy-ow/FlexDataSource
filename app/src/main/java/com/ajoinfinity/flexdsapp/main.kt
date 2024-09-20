@@ -161,15 +161,13 @@ fun main() {
     println()
 
 
-
-
     runBlocking {
-//        for (i in 1..1) performSaveAndReadTest(memoryDS, createUsers(NUMBER_OF_USERS),)
-//        for (i in 1..1) performSaveAndReadTest(filesystemDS, createUsers(NUMBER_OF_USERS),)
-//        for (i in 1..1) performSaveAndReadTest(filesystemDSwithMemoryCache, createUsers(NUMBER_OF_USERS),)
-//        for (i in 1..1) performSaveAndReadTest(indexedFilesystemDS, createUsers(NUMBER_OF_USERS),)
-//        for (i in 1..1) performSaveAndReadTest(indexedFilesystemDSwithCache, createUsers(NUMBER_OF_USERS),)
-        //for (i in 1..1) performSaveAndReadTest(fds5caches, createUsers(NUMBER_OF_USERS),)
+        for (i in 1..1) performSaveAndReadTest(memoryDS, createUsers(NUMBER_OF_USERS),)
+        for (i in 1..1) performSaveAndReadTest(filesystemDS, createUsers(NUMBER_OF_USERS),)
+        for (i in 1..1) performSaveAndReadTest(filesystemDSwithMemoryCache, createUsers(NUMBER_OF_USERS),)
+        for (i in 1..1) performSaveAndReadTest(indexedFilesystemDS, createUsers(NUMBER_OF_USERS),)
+        for (i in 1..1) performSaveAndReadTest(indexedFilesystemDSwithCache, createUsers(NUMBER_OF_USERS),)
+        for (i in 1..1) performSaveAndReadTest(fds5caches, createUsers(NUMBER_OF_USERS),)
         for (i in 1..1) performSaveAndReadTest(C, createUsers(NUMBER_OF_USERS),)
     }
 

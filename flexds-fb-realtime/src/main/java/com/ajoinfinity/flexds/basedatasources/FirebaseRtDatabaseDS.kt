@@ -1,20 +1,21 @@
 // FirebaseRtDatabaseDS.kt
 package com.ajoinfinity.flexds.basedatasources
 
-import com.ajoinfinity.flexds.FlexDataSourceManager
-import com.ajoinfinity.flexds.Logger
-import com.google.firebase.database.FirebaseDatabase
+import com.ajoinfinity.flexds.Flexds
 import kotlinx.coroutines.tasks.await
 
-class FirebaseRtDatabaseDS<D> constructor(
+import com.google.firebase.database.FirebaseDatabase
+import kotlinx.serialization.KSerializer
+
+class FirebaseRtDatabaseDS<D>(
     database: FirebaseDatabase,
     override val fdsId: String,
     private val clazz: Class<D>,
+    private val serializer: KSerializer<D>? = null,  // Optional serializer for custom types
     override val name: String = "FirebaseRealtimeDb-'$fdsId'",
     override val dataTypeName: String = "Data",
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = true,
-    override val logger: Logger = FlexDataSourceManager.defaultLogger,
-) : DataSource<D> {
+) : Flexds<D> {
 
     private val root = database.reference.child(fdsId)
     private val lastChangedRef = root.child("last_changed")
@@ -25,7 +26,7 @@ class FirebaseRtDatabaseDS<D> constructor(
             val snapshot = nodesRef.get().await()
             Result.success(snapshot.childrenCount.toInt())
         } catch (e: Exception) {
-            logger.logError("Failed to get size", e)
+            logger.logError("Failed to get number of elements", e)
             Result.failure(e)
         }
     }
@@ -35,33 +36,57 @@ class FirebaseRtDatabaseDS<D> constructor(
             val exists = nodesRef.child(id).get().await().exists()
             Result.success(exists)
         } catch (e: Exception) {
-            logger.logError("Failed to check containsId for $id", e)
+            logger.logError("Failed to check if ID exists: $id", e)
             Result.failure(e)
         }
     }
 
-    override suspend fun save(id: String, data: D): Result<Unit> {
+    override suspend fun save(id: String, data: D): Result<D> {
         return try {
             nodesRef.child(id).setValue(data).await()
             updateLastChanged()
-            Result.success(Unit)
+            Result.success(data)
         } catch (e: Exception) {
-            logger.logError("Failed to save data for $id", e)
+            logger.logError("Failed to save data for ID: $id", e)
             Result.failure(e)
         }
     }
 
-    override suspend fun update(id: String, data: D): Result<Unit> {
-        return save(id, data)
+    override suspend fun update(id: String, data: D): Result<D> {
+        return save(id, data)  // Same logic as save
+
     }
 
-    override suspend fun delete(id: String): Result<Unit> {
+    override suspend fun delete(id: String): Result<String> {
         return try {
             nodesRef.child(id).removeValue().await()
             updateLastChanged()
-            Result.success(Unit)
+            Result.success(id)
         } catch (e: Exception) {
-            logger.logError("Failed to delete data for $id", e)
+            logger.logError("Failed to delete data for ID: $id", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun findById(id: String): Result<D> {
+        return try {
+            val snapshot = nodesRef.child(id).get().await()
+            if (snapshot.exists()) {
+                val data: D? = snapshot.getValue(clazz)
+                if (data != null) {
+                    Result.success(data)
+                } else {
+                    val errorMsg = "Data is null for ID: $id"
+                    logger.logError(errorMsg)
+                    Result.failure(Exception(errorMsg))
+                }
+            } else {
+                val errorMsg = "Data not found for ID: $id"
+                logger.logError(errorMsg)
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            logger.logError("Failed to find data for ID: $id", e)
             Result.failure(e)
         }
     }
@@ -77,30 +102,7 @@ class FirebaseRtDatabaseDS<D> constructor(
         }
     }
 
-    override suspend fun findById(id: String): Result<D> {
-        return try {
-            val snapshot = nodesRef.child(id).get().await()
-            if (snapshot.exists()) {
-                val data = snapshot.getValue(clazz)
-                if (data != null) {
-                    Result.success(data)
-                } else {
-                    val errorMsg = "Data is null for id $id"
-                    logger.logError(errorMsg)
-                    Result.failure(Exception(errorMsg))
-                }
-            } else {
-                val errorMsg = "Data not found for id $id"
-                logger.logError(errorMsg)
-                Result.failure(Exception(errorMsg))
-            }
-        } catch (e: Exception) {
-            logger.logError("Failed to find data for $id", e)
-            Result.failure(e)
-        }
-    }
-
-    override suspend fun getTimeLastModification(): Result<Long> {
+    override suspend fun getLastModificationTime(): Result<Long> {
         return try {
             val snapshot = lastChangedRef.get().await()
             val lastModifiedTime = snapshot.getValue(Long::class.java)
@@ -125,3 +127,4 @@ class FirebaseRtDatabaseDS<D> constructor(
         }
     }
 }
+

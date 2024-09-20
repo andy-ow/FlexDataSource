@@ -6,7 +6,7 @@ import com.ajoinfinity.flexds.features.maxsize.MaxSizeDecorator
 import com.ajoinfinity.flexds.features.size.SizeDecorator
 
 // FlexDSBuilder class for building Flexds with decorators
-class FlexDSBuilder<D> internal constructor(private val fds: Flexds<D>) {
+class FlexDSBuilder<D>(private val fds: Flexds<D>) {
     private var decoratedFds: Flexds<D> = fds
 
     // Add a size decorator

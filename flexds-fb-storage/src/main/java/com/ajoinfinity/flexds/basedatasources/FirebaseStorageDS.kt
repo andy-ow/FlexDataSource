@@ -1,26 +1,20 @@
 package com.ajoinfinity.flexds.basedatasources
 
-import com.ajoinfinity.flexds.Logger
-import com.ajoinfinity.flexds.FlexDataSourceManager
+import com.ajoinfinity.flexds.Flexds
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
 import com.google.firebase.storage.StorageReference
 import kotlinx.coroutines.tasks.await
 import java.io.File
 import java.io.InputStream
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class FirebaseStorageDS<D> @Inject constructor(
+class FirebaseStorageDS<D>(
     override val fdsId: String,
     firebaseStorage: FirebaseStorage,
-    override val logger: Logger = FlexDataSourceManager.defaultLogger
-) : DataSource<D> {
-
-    override val name = "FirebaseStorage"
-    override val dataTypeName = "File"
-    override val SHOULD_NOT_BE_USED_AS_CACHE = true
+    override val dataTypeName: String = "File",
+    override val name: String = "FirebaseStorage-$fdsId",
+    override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = true
+) : Flexds<D> {
 
     private val firebaseStorageRoot: StorageReference = firebaseStorage.reference.child(fdsId)
 
@@ -41,7 +35,7 @@ class FirebaseStorageDS<D> @Inject constructor(
     }
 
     // Save the data (generic) to Firebase Storage under the given id
-    override suspend fun save(id: String, data: D): Result<Unit> {
+    override suspend fun save(id: String, data: D): Result<D> {
         return try {
             val storageRef = firebaseStorageRoot.child(id)
             when (data) {
@@ -50,7 +44,7 @@ class FirebaseStorageDS<D> @Inject constructor(
                 is File -> storageRef.putFile(android.net.Uri.fromFile(data)).await()
                 else -> throw IllegalArgumentException("Unsupported type: ${data!!::class.java}")
             }
-            Result.success(Unit)
+            Result.success(data)
         } catch (e: Exception) {
             logger.logError("Failed to save data for $id", e)
             Result.failure(e)
@@ -79,15 +73,19 @@ class FirebaseStorageDS<D> @Inject constructor(
     }
 
     // Delete the file with the given id from Firebase Storage
-    override suspend fun delete(id: String): Result<Unit> {
+    override suspend fun delete(id: String): Result<String> {
         return try {
             val storageRef = firebaseStorageRoot.child(id)
             storageRef.delete().await()
-            Result.success(Unit)
+            Result.success(id)
         } catch (e: Exception) {
             logger.logError("Failed to delete data for $id", e)
             Result.failure(e)
         }
+    }
+
+    override suspend fun deleteAll(): Result<Unit> {
+        return super.deleteAll()
     }
 
     // List all stored file IDs in Firebase Storage for the current dataSourceId
@@ -103,7 +101,7 @@ class FirebaseStorageDS<D> @Inject constructor(
     }
 
     // Get the time of the last modification (based on metadata) of any file in this data source
-    override suspend fun getTimeLastModification(): Result<Long> {
+    override suspend fun getLastModificationTime(): Result<Long> {
         return try {
             val listResult = firebaseStorageRoot.listAll().await()
             val lastModified = listResult.items
@@ -122,13 +120,13 @@ class FirebaseStorageDS<D> @Inject constructor(
             val listResult = firebaseStorageRoot.listAll().await()
             Result.success(listResult.items.size)
         } catch (e: Exception) {
-            logger.logError("Failed to get size of stored data", e)
+            logger.logError("Failed to get number of elements", e)
             Result.failure(e)
         }
     }
 
     // Update a file (generic) in Firebase Storage with the given id
-    override suspend fun update(id: String, data: D): Result<Unit> {
+    override suspend fun update(id: String, data: D): Result<D> {
         return save(id, data)
     }
 }
