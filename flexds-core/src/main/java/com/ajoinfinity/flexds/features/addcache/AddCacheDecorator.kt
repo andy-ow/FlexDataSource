@@ -8,7 +8,7 @@ class AddCacheDecorator<D>(
     override val cache: Flexds<D>,
     override val fdsId: String = "${fds.fdsId}+Cache<${cache.fdsId}>",
     private val addCacheDelegate: AddCacheDelegate<D> = AddCacheDelegate(fds, cache)
-) : BaseAddCacheDecorator<D>(fds, cache), FlexdsAddCache by addCacheDelegate {
+) : BaseAddCacheDecorator<D>(fds, cache), FlexdsAddCache<D> by addCacheDelegate {
 
     override fun showDataflow(): String {
         return " [${cache.showDataflow()} ${fds.showDataflow()}] "

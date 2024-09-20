@@ -7,8 +7,8 @@ import com.ajoinfinity.flexds.features.FlexdsSize
 
 class AddCacheDelegate<D>(
     private val fds: Flexds<D>,
-    private val cache: Flexds<D>
-): FlexdsAddCache {
+    override val cache: Flexds<D>
+): FlexdsAddCache<D> {
     val logger: Logger = fds.logger
 
     // Cache hit/miss statistics

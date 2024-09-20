@@ -15,4 +15,4 @@ interface FlexdsFeatures<D> :
         FlexdsSize<D>,
         FlexdsGetDbLastModificationTime,
         FlexdsListStoredIds<D>,
-        FlexdsAddCache
+        FlexdsAddCache<D>
