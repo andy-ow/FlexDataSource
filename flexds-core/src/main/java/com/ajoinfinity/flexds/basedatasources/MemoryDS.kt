@@ -14,7 +14,7 @@ class MemoryDS<D> constructor(
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = false,
 ) : Flexds<D> {
 
-    override val name: String = "MemoryStorage<$fdsId>"
+    override val name: String = "Mem<$fdsId>"
 
     // Memory storage to hold data
     private val memoryStore: MutableMap<String, Pair<D, Long>> = mutableMapOf()

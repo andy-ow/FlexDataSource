@@ -45,14 +45,13 @@ suspend fun <D> performSaveAndReadTest(
     println("Cleaning up...")
     if (dataSource is AddCacheDecorator) dataSource.clearCacheStats()
     dataSource.deleteAll()
-    if (dataSource is AddCacheDecorator) dataSource.cache.deleteAll()
 
     println("Done.")
 }
 
 fun createUsers(numberOfUsers: Int): List<User> {
     return List(numberOfUsers) {
-        val randomName = getRandomString(Random.nextInt(1, 100001))  // Generate a random string of length 1 to 100
+        val randomName = getRandomString(Random.nextInt(1, 10001))  // Generate a random string of length 1 to 100
         User(name = randomName, age = it)
     }
 }
@@ -64,11 +63,24 @@ fun getRandomString(length: Int): String {
         .joinToString("")
 }
 
+fun createFS(i: Int, cache: Flexds<User>): Flexds<User> {
+    return FlexDataSourceManager.indexedFilesystem(
+        filesDir = File("test_storage"),
+        fdsId = "B$i",
+        dataClass = User(name = "dummy", age = 100),
+        serializer = User.serializer()
+    )
+        .withCacheDecorator(cache)
+        .withSizeDecorator { user -> (10 * user.name.length + 16).toLong() }
+        .build()
+}
+
 fun main() {
     println("How many users to save?")
     val NUMBER_OF_USERS = readLine()?.toInt() ?: 100
     // Create a file directory for testing
     val filesDir = File("test_storage")
+    val filesDir5caches = File("test_storage_5caches")
 
     // Test with MemoryDS using the updated builder
     val memoryDS = FlexDataSourceManager.memory<User>("ram")
@@ -84,21 +96,21 @@ fun main() {
         serializer = User.serializer()
     )
         .withSizeDecorator { user -> (10 * user.name.length + 16).toLong() }
-        //.withMaxSizeDecorator(maxSize = 50_000_000, percentToRemove = 0.3)
+        //.withMaxSizeDecorator(maxSize = 5_000_000, percentToRemove = 0.3)
         .build()
 
     val cache = FlexDataSourceManager.memory<User>("MemCache")
         .withSizeDecorator { user -> (5 * user.name.length + 16).toLong() }
-        .withMaxSizeDecorator(maxSize = 200_000_000, percentToRemove = 0.5)
+        .withMaxSizeDecorator(maxSize = 2_000_000, percentToRemove = 0.5)
         .build()
-    val cache2 = FlexDataSourceManager.memory<User>("MemCache")
+    val cache2 = FlexDataSourceManager.memory<User>("MemCache2")
         .withSizeDecorator { user -> (5 * user.name.length + 16).toLong() }
-        .withMaxSizeDecorator(maxSize = 200_000_000, percentToRemove = 0.5)
+        .withMaxSizeDecorator(maxSize = 2_000_000, percentToRemove = 0.5)
         .build()
     // Test with FilesystemDS with Memory Cache using the updated builder
     val filesystemDSwithMemoryCache = FlexDataSourceManager.filesystem(
         filesDir = filesDir,
-        fdsId = "fs_with_mem_cache",
+        fdsId = "fs2",
         dataClass = User(name = "dummy", age = 100),
         serializer = User.serializer()
     )
@@ -107,8 +119,8 @@ fun main() {
         .build()
 
     val indexedFilesystemDS = FlexDataSourceManager.indexedFilesystem(
-        filesDir = File("filesDir"),
-        fdsId = "indexed-storage",
+        filesDir = filesDir,
+        fdsId = "ind",
         dataClass = User(name = "dummy", age = 100),
         serializer = User.serializer()
     )
@@ -116,24 +128,50 @@ fun main() {
         .build()
 
     val indexedFilesystemDSwithCache = FlexDataSourceManager.indexedFilesystem(
-        filesDir = File("filesDir"),
-        fdsId = "indexed-storageWithCache",
+        filesDir = filesDir,
+        fdsId = "ind2",
         dataClass = User(name = "dummy", age = 100),
         serializer = User.serializer()
     )
         .withCacheDecorator(cache2)
         .withSizeDecorator { user -> (10 * user.name.length + 16).toLong() }
         .build()
-    println("dataflow: ${filesystemDSwithMemoryCache.showDataflow()}")
+
+    val fds5caches = FlexDataSourceManager.filesystem(
+        filesDir = filesDir5caches,
+        fdsId = "fs5caches",
+        dataClass = User(name = "dummy", age = 100),
+        serializer = User.serializer()
+    )
+        .withCacheDecorator(memoryDS)
+        .withCacheDecorator(filesystemDS)
+        .withCacheDecorator(filesystemDSwithMemoryCache)
+        .withCacheDecorator(indexedFilesystemDS)
+        .withCacheDecorator(indexedFilesystemDSwithCache)
+        .build()
+    println("dataflow: ${fds5caches.showDataflow()}")
+
+
+    val B = mutableListOf(createFS(0, filesystemDS))
+    for (i in 1..5) {
+        B.add(createFS(i, B.last()))
+    }
+    val C = B.last()
+    print("dataflow: ${C.showDataflow()}")
+    println()
+
 
 
 
     runBlocking {
-        for (i in 1..1) performSaveAndReadTest(memoryDS, createUsers(NUMBER_OF_USERS),)
-        for (i in 1..1) performSaveAndReadTest(filesystemDS, createUsers(NUMBER_OF_USERS),)
-        for (i in 1..1) performSaveAndReadTest(filesystemDSwithMemoryCache, createUsers(NUMBER_OF_USERS),)
-        for (i in 1..1) performSaveAndReadTest(indexedFilesystemDS, createUsers(NUMBER_OF_USERS),)
-        for (i in 1..1) performSaveAndReadTest(indexedFilesystemDSwithCache, createUsers(NUMBER_OF_USERS),)
-
+//        for (i in 1..1) performSaveAndReadTest(memoryDS, createUsers(NUMBER_OF_USERS),)
+//        for (i in 1..1) performSaveAndReadTest(filesystemDS, createUsers(NUMBER_OF_USERS),)
+//        for (i in 1..1) performSaveAndReadTest(filesystemDSwithMemoryCache, createUsers(NUMBER_OF_USERS),)
+//        for (i in 1..1) performSaveAndReadTest(indexedFilesystemDS, createUsers(NUMBER_OF_USERS),)
+//        for (i in 1..1) performSaveAndReadTest(indexedFilesystemDSwithCache, createUsers(NUMBER_OF_USERS),)
+        //for (i in 1..1) performSaveAndReadTest(fds5caches, createUsers(NUMBER_OF_USERS),)
+        for (i in 1..1) performSaveAndReadTest(C, createUsers(NUMBER_OF_USERS),)
     }
+
+
 }

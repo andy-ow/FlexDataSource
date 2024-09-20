@@ -2,6 +2,7 @@ package com.ajoinfinity.flexds.features.addcache
 
 import com.ajoinfinity.flexds.Flexds
 import com.ajoinfinity.flexds.features.FlexdsAddCache
+import java.io.IOException
 
 class AddCacheDecorator<D>(
     override val fds: Flexds<D>,
@@ -11,10 +12,10 @@ class AddCacheDecorator<D>(
 ) : BaseAddCacheDecorator<D>(fds, cache), FlexdsAddCache<D> by addCacheDelegate {
 
     override fun showDataflow(): String {
-        return " [${cache.showDataflow()} ${fds.showDataflow()}] "
+        return " [${cache.showDataflow()} --> ${fds.showDataflow()}] "
     }
     override val name: String
-        get() = "${fds.name}+Cache<${cache.name}>"
+        get() = "Decorator(${fds.name}<${cache.name}>)"
 
     override suspend fun containsId(id: String): Result<Boolean> {
         return try {
@@ -90,6 +91,12 @@ class AddCacheDecorator<D>(
                 logger.logError("Failed to delete in data source: $id")
             }
         }
+    }
+
+    override suspend fun deleteAll(): Result<Unit> {
+        return if ((listOf(fds.deleteAll(),cache.deleteAll()).all { it.isSuccess }))
+            Result.success(Unit)
+        else Result.failure(IOException("Could not deleteAll ${fds.name} and/or ${cache.name}"))
     }
 
     override suspend fun listStoredIds(): Result<List<String>> {

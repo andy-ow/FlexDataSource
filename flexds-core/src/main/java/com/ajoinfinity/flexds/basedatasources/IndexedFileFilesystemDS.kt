@@ -19,11 +19,17 @@ class IndexedFileFilesystemDS<D>(
 ) : Flexds<D> {
 
     private val json: Json = Json { prettyPrint = true }
-    override val name: String = "IndexedFileStorage<$fdsId>"
+    override val name: String = "IFS<$fdsId>"
 
     // File paths
     private val dataFile: File = File(filesDir, "$fdsId.data")
     private val indexFile: File = File(filesDir, "$fdsId.index")
+    override suspend fun deleteAll(): Result<Unit> {
+        return if (dataFile.delete() && indexFile.delete()) Result.success(Unit)
+        else Result.failure(IOException("Could not delete data files $dataFile and/or $indexFile"))
+
+    }
+
 
     private val mutex = Mutex()
 

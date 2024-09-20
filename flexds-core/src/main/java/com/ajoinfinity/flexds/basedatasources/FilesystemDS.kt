@@ -22,7 +22,7 @@ class FilesystemDS<D> (
 
     private val json: Json = Json { prettyPrint = true }
 
-    override val name: String = "FilesystemStorage<$fdsId>"
+    override val name: String = "FS<$fdsId>"
 
     // Always use a subdirectory relative to context.filesDir
     private val directory: File = File(filesDir, fdsId)
