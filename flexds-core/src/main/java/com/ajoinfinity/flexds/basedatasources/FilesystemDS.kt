@@ -22,7 +22,7 @@ class FilesystemDS<D> (
 
     private val json: Json = Json { prettyPrint = true }
 
-    override val name: String = "LocalStorage<$fdsId>"
+    override val name: String = "FilesystemStorage<$fdsId>"
 
     // Always use a subdirectory relative to context.filesDir
     private val directory: File = File(filesDir, fdsId)
@@ -67,6 +67,7 @@ class FilesystemDS<D> (
                         } ?: throw IllegalArgumentException("Unsupported type: ${data!!::class.java}")
                     }
                 }
+                if (!file.exists()) throw FileNotFoundException("Error: File $file in $directory (id $id) does not exist")
                 Result.success(data)
             } catch (e: IOException) {
                 val errorMsg = "Failed to save file with id '$id': ${e.message}"

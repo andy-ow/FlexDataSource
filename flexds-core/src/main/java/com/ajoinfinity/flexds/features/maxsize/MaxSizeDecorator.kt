@@ -6,6 +6,7 @@ import com.ajoinfinity.flexds.features.size.SizeDecorator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlin.system.measureTimeMillis
 
 class MaxSizeDecorator<D>(
     override val fds: SizeDecorator<D>,
@@ -16,7 +17,6 @@ class MaxSizeDecorator<D>(
 ) : BaseMaxSizeDecorator<D>(fds), FlexdsMaxSize by maxSizeDelegate {
 
     override suspend fun save(id: String, data: D): Result<D> {
-
         val dataSize = fds.getItemSize(data)
         return if (willExceedMaxSize(dataSize).getOrNull() != false) {
             handleExceedingMaxSize(id, data, dataSize)
@@ -45,9 +45,11 @@ class MaxSizeDecorator<D>(
         }
     }
 
-
-
-    private suspend fun handleExceedingMaxSize(id: String, data: D, dataSize: Result<Long>): Result<D> {
+    private suspend fun handleExceedingMaxSize(
+        id: String,
+        data: D,
+        dataSize: Result<Long>
+    ): Result<D> {
         return if (shouldPreventSaveWhenExceeded) {
             Result.failure(Exception("Max size exceeded. Cannot save data for $dataTypeName $id"))
         } else {
@@ -58,33 +60,32 @@ class MaxSizeDecorator<D>(
 
     private suspend fun willExceedMaxSize(dataSize: Result<Long>): Result<Boolean> {
         return try {
-            Result.success(fds.getFlexdsSize().getOrThrow() + dataSize.getOrThrow() > maxSizeDelegate.maxSize)
+            Result.success(
+                fds.getFlexdsSize().getOrThrow() + dataSize.getOrThrow() > maxSizeDelegate.maxSize
+            )
         } catch (e: Exception) {
             Result.failure(IllegalArgumentException("Could not determine $dataTypeName size"))
         }
     }
 
     private suspend fun freeUpSpace(requiredSize: Long) {
-        println("FreeUpSpace")
-        val targetFreeSpace = (fds.getFlexdsSize().getOrThrow() * percentToRemove).toLong()
-        println("targetFreeSpace: $targetFreeSpace")
-        val storedIds = fds.listStoredIds().getOrNull() ?: return
-        var freedSpace = 0L
-        val numberOfItems = storedIds.size
-        var index: Int = 0
-        for (id in storedIds) {
-            index += 1
-            val itemSize = fds.getItemSize(id).getOrElse { 0 }
-            fds.delete(id)
-            freedSpace += itemSize
+//            fds.deleteAll()
+//            return
+            val spaceToFree =
+                (requiredSize + fds.getFlexdsSize().getOrThrow() - maxSizeDelegate.maxSize)
+            val targetFreeSpace = spaceToFree
+            val storedIds = fds.listStoredIds().getOrNull() ?: return
+            var freedSpace = 0L
+            for (id in storedIds) {
+                val itemSize = fds.getItemSize(id).getOrElse { 0 }
+                fds.delete(id)
+                freedSpace += itemSize
 
-            if (freedSpace >= targetFreeSpace || index > numberOfItems/2) {
-                break
+                if (freedSpace >= targetFreeSpace) {
+                    break
+                }
             }
-        }
-        println("fds: ${fds.name}")
-        println("Freed space: $freedSpace")
-        println("index: $index  numberOfItems: $numberOfItems")
-        logger.log("MaxSizeDecorator: Freed $freedSpace bytes to make space for new data.")
+
+        //logger.log("MaxSizeDecorator: Freed $freedSpace bytes to make space for new data.")
     }
 }
