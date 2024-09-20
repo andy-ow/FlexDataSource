@@ -23,9 +23,8 @@ class MaxSizeDecorator<D>(
 
 
     override suspend fun save(id: String, data: D): Result<D> {
-        val dataSize = fds.getItemSize(id).getOrElse { getSizeOfData(data) }
-
-        return if (willExceedMaxSize(dataSize)) {
+        val dataSize = fds.getItemSize(id)
+        return if (willExceedMaxSize(dataSize).getOrNull() ?: true) {
             handleExceedingMaxSize(id, data, dataSize)
         } else {
             performSave(id, data, dataSize)
@@ -37,34 +36,46 @@ class MaxSizeDecorator<D>(
     }
 
     override suspend fun delete(id: String): Result<String> {
-        val itemSize = fds.getItemSize(id).getOrElse { 0 }
+        val itemSize = fds.getItemSize(id)
         val result = fds.delete(id)
         if (result.isSuccess) {
-            maxSizeDelegate.currentSize -= itemSize
+            try {
+                maxSizeDelegate.currentSize -= itemSize.getOrThrow()
+            } catch(e: Exception) {
+                logger.logError("MaxSizeDecorator: delete: Could not get size of $id")
+                maxSizeDelegate.initializeCurrentSize()
+            }
         }
         return result
     }
 
     // Helper methods
-    private suspend fun performSave(id: String, data: D, dataSize: Long): Result<D> {
+    private suspend fun performSave(id: String, data: D, dataSize: Result<Long>): Result<D> {
         val result = fds.save(id, data)
-        if (result.isSuccess) {
-            maxSizeDelegate.currentSize += dataSize
+        if (result.isSuccess && dataSize.isSuccess) {
+            maxSizeDelegate.currentSize += dataSize.getOrThrow()
+        } else {
+            if (result.isFailure) logger.logError("Could not save $dataTypeName $id")
+            if (dataSize.isFailure) logger.logError("Could not determine size of $dataTypeName $id")
         }
         return result
     }
 
-    private suspend fun handleExceedingMaxSize(id: String, data: D, dataSize: Long): Result<D> {
+    private suspend fun handleExceedingMaxSize(id: String, data: D, dataSize: Result<Long>): Result<D> {
         return if (shouldPreventSaveWhenExceeded) {
-            Result.failure(Exception("Max size exceeded. Cannot save data: $id"))
+            Result.failure(Exception("Max size exceeded. Cannot save data for $dataTypeName $id"))
         } else {
-            freeUpSpace(dataSize)
+            dataSize.getOrNull()?.let { freeUpSpace(it) }
             performSave(id, data, dataSize)
         }
     }
 
-    private fun willExceedMaxSize(dataSize: Long): Boolean {
-        return (maxSizeDelegate.currentSize + dataSize) > maxSizeDelegate.maxSize
+    private fun willExceedMaxSize(dataSize: Result<Long>): Result<Boolean> {
+        return try {
+            Result.success(maxSizeDelegate.currentSize + dataSize.getOrThrow() > maxSizeDelegate.maxSize)
+        } catch(e: Exception) {
+            Result.failure(IllegalArgumentException("Could not determine $dataTypeName size"))
+        }
     }
 
     private suspend fun freeUpSpace(requiredSize: Long) {
@@ -87,11 +98,4 @@ class MaxSizeDecorator<D>(
 
         logger.log("MaxSizeDecorator: Freed $freedSpace bytes to make space for new data.")
     }
-
-    private fun getSizeOfData(data: D): Long {
-        // Placeholder logic to determine size of the data.
-        // Replace this with actual logic for determining the size.
-        return 1L // Assuming each data element has a size of 1 for simplicity.
-    }
-
 }

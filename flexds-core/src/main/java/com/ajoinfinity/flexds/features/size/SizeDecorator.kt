@@ -17,11 +17,13 @@ class SizeDecorator<D>(
     init {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                sizeDelegate.getFlexdsSize()
-                val message = "SizeDecorator.kt: SizeDecorator was already applied."
-                val e = IllegalArgumentException(message)
-                logger.logError(message, e)
-                throw e
+                println("getFlexdsSize: ${fds.getFlexdsSize()}")
+                if (fds.getFlexdsSize().exceptionOrNull() !is DataSourceSizeNotInitializedException) {
+                    val message = "SizeDecorator.kt: SizeDecorator was already applied."
+                    val e = IllegalArgumentException(message)
+                    logger.logError(message, e)
+                    throw e
+                }
             } catch (e: NotImplementedError) {
                 // everything ok
             }
