@@ -68,11 +68,11 @@ class MemoryDS<D> constructor(
                     Result.success(dataEntry.first)
                 } else {
                     val errorMsg = "$name: $dataTypeName not found: $id"
-                    logger.logError(errorMsg)
-                    Result.failure(FileNotFoundException(errorMsg))
+                    //logger.logError(errorMsg)
+                    Result.failure(IllegalArgumentException(errorMsg))
                 }
             } catch (e: Exception) {
-                logger.logError("$name: Error finding data with ID: $id", e)
+                //logger.logError("$name: Error finding data with ID: $id", e)
                 Result.failure(e)
             }
         }
@@ -98,7 +98,7 @@ class MemoryDS<D> constructor(
                     Result.success(id)
                 } else {
                     val errorMsg = "$name: $dataTypeName not found: $id"
-                    logger.logError(errorMsg)
+                    //logger.logError(errorMsg)
                     Result.failure(FileNotFoundException(errorMsg))
                 }
             } catch (e: Exception) {

@@ -2,86 +2,72 @@ package com.ajoinfinity.flexds.features.maxsize
 
 import com.ajoinfinity.flexds.Flexds
 import com.ajoinfinity.flexds.features.FlexdsMaxSize
+import com.ajoinfinity.flexds.features.size.SizeDecorator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class MaxSizeDecorator<D>(
-    override val fds: Flexds<D>,
+    override val fds: SizeDecorator<D>,
     private val initialMaxSize: Long,
     private val percentToRemove: Double = 0.5, // Default: remove half when exceeding max size
     private val shouldPreventSaveWhenExceeded: Boolean = false, // If true, prevent save or update when exceeding max size
-    private val maxSizeDelegate: MaxSizeDelegate<D> = MaxSizeDelegate(fds, initialMaxSize,)
+    private val maxSizeDelegate: MaxSizeDelegate<D> = MaxSizeDelegate(fds, initialMaxSize)
 ) : BaseMaxSizeDecorator<D>(fds), FlexdsMaxSize by maxSizeDelegate {
 
-
-    init {
-        CoroutineScope(Dispatchers.IO).launch {
-            maxSizeDelegate.initializeCurrentSize()
-        }
-    }
-
-
     override suspend fun save(id: String, data: D): Result<D> {
-        val dataSize = fds.getItemSize(id)
-        return if (willExceedMaxSize(dataSize).getOrNull() ?: true) {
+
+        val dataSize = fds.getItemSize(data)
+        return if (willExceedMaxSize(dataSize).getOrNull() != false) {
             handleExceedingMaxSize(id, data, dataSize)
         } else {
-            performSave(id, data, dataSize)
+            fds.save(id, data)
         }
     }
 
     override suspend fun update(id: String, data: D): Result<D> {
-        return save(id, data)
-    }
+        // Get the current size of the item
+        val oldSize = fds.getItemSize(id)
 
-    override suspend fun delete(id: String): Result<String> {
-        val itemSize = fds.getItemSize(id)
-        val result = fds.delete(id)
-        if (result.isSuccess) {
-            try {
-                maxSizeDelegate.currentSize -= itemSize.getOrThrow()
-            } catch(e: Exception) {
-                logger.logError("MaxSizeDecorator: delete: Could not get size of $id")
-                maxSizeDelegate.initializeCurrentSize()
+        // Get the new size of the updated data
+        val newSize = fds.getItemSize(data)
+
+        return if (oldSize.isSuccess && newSize.isSuccess) {
+            val sizeDifference = newSize.getOrThrow() - oldSize.getOrThrow()
+            if (willExceedMaxSize(Result.success(sizeDifference)).getOrNull() != false) {
+                handleExceedingMaxSize(id, data, Result.success(sizeDifference))
+            } else {
+                fds.update(id, data)
             }
+        } else {
+            logger.logError("Could not determine old or new size for $dataTypeName $id")
+            Result.failure(Exception("Size calculation error"))
         }
-        return result
     }
 
-    // Helper methods
-    private suspend fun performSave(id: String, data: D, dataSize: Result<Long>): Result<D> {
-        val result = fds.save(id, data)
-        if (result.isSuccess && dataSize.isSuccess) {
-            maxSizeDelegate.currentSize += dataSize.getOrThrow()
-        } else {
-            if (result.isFailure) logger.logError("Could not save $dataTypeName $id")
-            if (dataSize.isFailure) logger.logError("Could not determine size of $dataTypeName $id")
-        }
-        return result
-    }
+
 
     private suspend fun handleExceedingMaxSize(id: String, data: D, dataSize: Result<Long>): Result<D> {
         return if (shouldPreventSaveWhenExceeded) {
             Result.failure(Exception("Max size exceeded. Cannot save data for $dataTypeName $id"))
         } else {
             dataSize.getOrNull()?.let { freeUpSpace(it) }
-            performSave(id, data, dataSize)
+            fds.save(id, data)
         }
     }
 
-    private fun willExceedMaxSize(dataSize: Result<Long>): Result<Boolean> {
+    private suspend fun willExceedMaxSize(dataSize: Result<Long>): Result<Boolean> {
         return try {
-            Result.success(maxSizeDelegate.currentSize + dataSize.getOrThrow() > maxSizeDelegate.maxSize)
-        } catch(e: Exception) {
+            Result.success(fds.getFlexdsSize().getOrThrow() + dataSize.getOrThrow() > maxSizeDelegate.maxSize)
+        } catch (e: Exception) {
             Result.failure(IllegalArgumentException("Could not determine $dataTypeName size"))
         }
     }
 
     private suspend fun freeUpSpace(requiredSize: Long) {
-        val spaceToFree = (requiredSize + maxSizeDelegate.currentSize - maxSizeDelegate.maxSize)
-        val targetFreeSpace = (spaceToFree * percentToRemove).toLong()
-
+        println("FreeUpSpace")
+        val targetFreeSpace = (fds.getFlexdsSize().getOrThrow() * percentToRemove).toLong()
+        println("targetFreeSpace: $targetFreeSpace")
         val storedIds = fds.listStoredIds().getOrNull() ?: return
         var freedSpace = 0L
 
@@ -89,13 +75,12 @@ class MaxSizeDecorator<D>(
             val itemSize = fds.getItemSize(id).getOrElse { 0 }
             fds.delete(id)
             freedSpace += itemSize
-            maxSizeDelegate.currentSize -= itemSize
 
             if (freedSpace >= targetFreeSpace) {
                 break
             }
         }
-
+        println("Freed space: $freedSpace")
         logger.log("MaxSizeDecorator: Freed $freedSpace bytes to make space for new data.")
     }
 }

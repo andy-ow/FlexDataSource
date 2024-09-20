@@ -11,6 +11,6 @@ interface FlexdsFeatures<D> :
         FlexdsLogger,
         FlexdsCore<D>,
         FlexdsDelete<D>,
-        FlexdsSize,
+        FlexdsSize<D>,
         FlexdsGetDbLastModificationTime,
         FlexdsListStoredIds<D>

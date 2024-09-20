@@ -8,9 +8,9 @@ import kotlinx.coroutines.launch
 
 class SizeDecorator<D>(
     override val fds: Flexds<D>,
-    private val getItemSize: (D) -> Long,
-    private val sizeDelegate: SizeDelegate<D> = SizeDelegate(fds, getItemSize)
-): BaseSizeDecorator<D>(fds), FlexdsSize by sizeDelegate{
+    private val getSize: (D) -> Long,
+    private val sizeDelegate: SizeDelegate<D> = SizeDelegate(fds, getSize)
+): BaseSizeDecorator<D>(fds), FlexdsSize<D> by sizeDelegate{
     class DataSourceSizeNotInitializedException: Exception("Datasource size not initialized")
     class DataSourceSizeUnknownException: Exception("Datasource size is unknown")
 
@@ -31,7 +31,12 @@ class SizeDecorator<D>(
     }
 
     override suspend fun findById(id: String): Result<D> {
-        val item = fds.findById(id)
+        val item = try {
+            fds.findById(id)
+        } catch (e: Exception) {
+            //logger.logError("SizeDecorator: findById: Could not find $dataTypeName $id")
+            Result.failure(e)
+        }
         if (item.isSuccess) try {
             sizeDelegate.insertSizeInHashMapIfNotExist(id, item.getOrThrow())
         } catch (e: Exception) {

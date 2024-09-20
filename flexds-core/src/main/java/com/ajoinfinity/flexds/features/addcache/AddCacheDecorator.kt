@@ -53,24 +53,30 @@ class AddCacheDecorator<D>(
 
     override suspend fun findById(id: String): Result<D> {
         addCacheDelegate.printCacheStatsIfNecessary()
-
-        val localResult = cache.findById(id)
-        return if (localResult.isSuccess) {
-            addCacheDelegate.cacheHits++
-            localResult
-        } else {
-            addCacheDelegate.cacheMisses++
-            val remoteResult = fds.findById(id)
-            if (remoteResult.isSuccess) {
-                cache.save(id, remoteResult.getOrNull()!!)
+        return try {
+            val localResult = cache.findById(id)
+            if (localResult.isSuccess) {
+                addCacheDelegate.cacheHits++
+                localResult
+            } else {
+                addCacheDelegate.cacheMisses++
+                val remoteResult = fds.findById(id)
+                if (remoteResult.isSuccess) {
+                    cache.save(id, remoteResult.getOrNull()!!)
+                }
+                remoteResult
             }
-            remoteResult
+        } catch (e: Exception) {
+            logger.logError("AddCacheDecorator: findById: Could not find $dataTypeName $id", e)
+            Result.failure(e)
         }
+
     }
 
     override suspend fun delete(id: String): Result<String> {
-        val cacheResult = cache.delete(id)
-        if (cacheResult.isFailure) logger.logError("Failed to delete in cache: $id")
+
+        val cacheResult = if (cache.containsId(id).getOrThrow()) cache.delete(id) else Result.success(Unit)
+        //if (cacheResult.isFailure) logger.logError("Failed to delete in cache: $id")
 
         return fds.delete(id).also {
             if (it.isFailure) {

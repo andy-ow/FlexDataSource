@@ -17,7 +17,16 @@ class FlexDSBuilder<D> internal constructor(private val fds: Flexds<D>) {
 
     // Add a max size decorator
     fun withMaxSizeDecorator(maxSize: Long, percentToRemove: Double = 0.5, shouldPreventSaveWhenExceeded: Boolean = false): FlexDSBuilder<D> {
-        decoratedFds = MaxSizeDecorator(decoratedFds, maxSize, percentToRemove, shouldPreventSaveWhenExceeded)
+        if (decoratedFds is SizeDecorator) {
+            decoratedFds = MaxSizeDecorator(
+                decoratedFds as SizeDecorator<D>,
+                maxSize,
+                percentToRemove,
+                shouldPreventSaveWhenExceeded
+            )
+        } else {
+            throw IllegalArgumentException("MaxSize feature can only be used in combination with Size feature.")
+        }
         return this
     }
 

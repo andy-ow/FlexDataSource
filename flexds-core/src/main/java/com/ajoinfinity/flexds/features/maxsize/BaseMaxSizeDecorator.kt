@@ -23,4 +23,6 @@ abstract class BaseMaxSizeDecorator<D>(open val fds: Flexds<D>): Flexds<D> {
     override suspend fun listStoredIds(): Result<List<String>> = fds.listStoredIds()
     override suspend fun getLastModificationTime(): Result<Long> = fds.getLastModificationTime()
     override suspend fun getNumberOfElements(): Result<Int> = fds.getNumberOfElements()
+    override suspend fun delete(id: String): Result<String> = fds.delete(id)
+
 }

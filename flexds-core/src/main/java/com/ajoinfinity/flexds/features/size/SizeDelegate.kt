@@ -8,8 +8,8 @@ import com.ajoinfinity.flexds.features.size.SizeDecorator.DataSourceSizeUnknownE
 
 class SizeDelegate<D>(
     val flexds: Flexds<D>,
-    val getItemSize: (D) -> Long,
-): FlexdsSize {
+    val getSize: (D) -> Long,
+): FlexdsSize<D> {
     private val logger = FlexDataSourceManager.logger
     private val NOT_INITIALIZED = -1L
     private val UNKNOWN = -2L
@@ -44,8 +44,21 @@ class SizeDelegate<D>(
         }
     }
 
+    override suspend fun getItemSize(data: D): Result<Long> {
+        return Result.success(getSize(data))
+    }
+
     override suspend fun getItemSize(id: String): Result<Long> {
         return getSizeFromHashMap(id)
+    }
+
+    override suspend fun getFlexdsSize(): Result<Long> {
+        if (dataSourceSize.size < 0) recalculateDataSourceSize()
+        if (dataSourceSize.size == NOT_INITIALIZED) return Result.failure(
+            DataSourceSizeNotInitializedException()
+        )
+        if (dataSourceSize.size == UNKNOWN) return Result.failure(DataSourceSizeUnknownException())
+        return Result.success(dataSourceSize.size)
     }
 
     internal suspend fun getSizeFromHashMap(id: String): Result<Long> {
@@ -53,7 +66,7 @@ class SizeDelegate<D>(
             sizeMap[id]?.let {
                 Result.success(it)
             } ?: run {
-                val size = getItemSize(flexds.findById(id).getOrThrow())
+                val size = getSize(flexds.findById(id).getOrThrow())
                 sizeMap[id] = size // Store the size in the map
                 Result.success(size)
             }
@@ -68,7 +81,7 @@ class SizeDelegate<D>(
 
     internal fun saveSizeInHashMap(id: String, item: D): Result<Long> {
         return try {
-            val size = getItemSize(item)
+            val size = getSize(item)
             if (size >= 0) sizeMap[id] = size
             else throw IllegalArgumentException("Size of $id (item: $item) is negative: $size")
             Result.success(size)
@@ -76,15 +89,6 @@ class SizeDelegate<D>(
             logger.logError("Could not get size of $id", e)
             Result.failure(e)
         }
-    }
-
-    override suspend fun getFlexdsSize(): Result<Long> {
-        if (dataSourceSize.size < 0) recalculateDataSourceSize()
-        if (dataSourceSize.size == NOT_INITIALIZED) return Result.failure(
-            DataSourceSizeNotInitializedException()
-        )
-        if (dataSourceSize.size == UNKNOWN) return Result.failure(DataSourceSizeUnknownException())
-        return Result.success(dataSourceSize.size)
     }
 
     private suspend fun recalculateDataSourceSize() {

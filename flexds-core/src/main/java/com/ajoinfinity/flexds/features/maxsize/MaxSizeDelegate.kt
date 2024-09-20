@@ -8,11 +8,6 @@ class MaxSizeDelegate<D>(
     internal var maxSize: Long,
 ): FlexdsMaxSize {
 
-    internal var currentSize: Long = 0
-
-    internal suspend fun initializeCurrentSize() {
-        currentSize = fds.getFlexdsSize().getOrElse { 0 }
-    }
 
     override suspend fun getMaxSize(): Result<Long> {
         return Result.success(maxSize)

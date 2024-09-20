@@ -20,6 +20,7 @@ suspend fun <D> performSaveAndReadTest(
     users: List<D>,
 ) {
     // Save users
+    //println("Starting SAVE $dataSource")
     val saveTime = measureTimeMillis {
         users.forEachIndexed { index, user ->
             dataSource.save("user$index", user)
@@ -28,6 +29,7 @@ suspend fun <D> performSaveAndReadTest(
     println("Time to save ${users.size} users in ${dataSource.name}: $saveTime ms")
 
     // Read users
+    //println("Starting READ $dataSource")
     val readTime = measureTimeMillis {
         users.forEachIndexed { index, _ ->
             assert(users[index] == dataSource.findById("user$index").getOrThrow()) { "Test Failed" }
@@ -35,10 +37,10 @@ suspend fun <D> performSaveAndReadTest(
         }
     }
     println("Time to read ${users.size} users from ${dataSource.name}: $readTime ms")
-    print("Cleaning up. ")
+    //print("Cleaning up. ")
     val cleanUp = dataSource.deleteAll()
     if (cleanUp.isFailure) println("Error while cleaning up: ${cleanUp.exceptionOrNull()}")
-    else println("Done.")
+    //else println("Done.")
 }
 
 fun createUsers(numberOfUsers: Int): List<User> {
@@ -54,32 +56,36 @@ fun main() {
     val filesDir = File("test_storage")
 
     // Test with MemoryDS using the updated builder
-    val memoryDS = FlexDataSourceManager.memory<User>("test_memory")
-        .withSizeDecorator { user -> (10 * user.name.length + 16).toLong() }
-        .withMaxSizeDecorator(maxSize = 10000, percentToRemove = 0.5)
+    val memoryDS = FlexDataSourceManager.memory<User>("ram")
+        //.withSizeDecorator { user -> (10 * user.name.length + 16).toLong() }
+        //.withMaxSizeDecorator(maxSize = 10_000_000, percentToRemove = 0.5, )
         .build()
 
     // Test with FilesystemDS using the updated builder
     val filesystemDS = FlexDataSourceManager.filesystem(
         filesDir = filesDir,
-        fdsId = "users-filesystemDS-${System.currentTimeMillis()}",
+        fdsId = "fs",
         dataClass = User(name = "dummy", age = 100),
         serializer = User.serializer()
     )
         .withSizeDecorator { user -> (10 * user.name.length + 16).toLong() }
-        .withMaxSizeDecorator(maxSize = 20000, percentToRemove = 0.3)
+        //.withMaxSizeDecorator(maxSize = 20000, percentToRemove = 0.3)
         .build()
-
+    val cache = FlexDataSourceManager.memory<User>("MemCache")
+        .withSizeDecorator { user -> (10 * user.name.length + 16).toLong() }
+        .withMaxSizeDecorator(maxSize = 10_000_000, percentToRemove = 0.5)
+        .build()
     // Test with FilesystemDS with Memory Cache using the updated builder
     val filesystemDSwithMemoryCache = FlexDataSourceManager.filesystem(
         filesDir = filesDir,
-        fdsId = "users-filesystemDSwithCache-${System.currentTimeMillis()}",
+        fdsId = "fs_with_mem_cache",
         dataClass = User(name = "dummy", age = 100),
         serializer = User.serializer()
     )
-        .withCacheDecorator(memoryDS)  // Use memory cache with filesystem
+        .withCacheDecorator(cache)  // Use memory cache with filesystem
         .withSizeDecorator { user -> (10 * user.name.length + 16).toLong() }
         .build()
+    println("dataflow: ${filesystemDSwithMemoryCache.showDataflow()}")
 
 
 
