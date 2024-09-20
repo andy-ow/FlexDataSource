@@ -70,17 +70,21 @@ class MaxSizeDecorator<D>(
         println("targetFreeSpace: $targetFreeSpace")
         val storedIds = fds.listStoredIds().getOrNull() ?: return
         var freedSpace = 0L
-
+        val numberOfItems = storedIds.size
+        var index: Int = 0
         for (id in storedIds) {
+            index += 1
             val itemSize = fds.getItemSize(id).getOrElse { 0 }
             fds.delete(id)
             freedSpace += itemSize
 
-            if (freedSpace >= targetFreeSpace) {
+            if (freedSpace >= targetFreeSpace || index > numberOfItems/2) {
                 break
             }
         }
+        println("fds: ${fds.name}")
         println("Freed space: $freedSpace")
+        println("index: $index  numberOfItems: $numberOfItems")
         logger.log("MaxSizeDecorator: Freed $freedSpace bytes to make space for new data.")
     }
 }
