@@ -2,11 +2,12 @@ package com.ajoinfinity.flexds.features.addcache
 
 import com.ajoinfinity.flexds.Flexds
 import com.ajoinfinity.flexds.Logger
+import com.ajoinfinity.flexds.features.FlexdsAddCache
 
 abstract class BaseAddCacheDecorator<D>(
     open val fds: Flexds<D>,
     open val cache: Flexds<D>,
-    ): Flexds<D> {
+    ): FlexdsAddCache, Flexds<D> {
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean
         get() = fds.SHOULD_NOT_BE_USED_AS_CACHE
     override val logger: Logger

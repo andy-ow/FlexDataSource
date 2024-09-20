@@ -53,7 +53,7 @@ class FilesystemDS<D> (
     }
 
     override suspend fun save(id: String, data: D): Result<D> {
-        mutex.withLock {
+        //mutex.withLock {
            return try {
                 val file = File(directory, id)
                 when (data) {
@@ -67,7 +67,6 @@ class FilesystemDS<D> (
                         } ?: throw IllegalArgumentException("Unsupported type: ${data!!::class.java}")
                     }
                 }
-                if (!file.exists()) throw FileNotFoundException("Error: File $file in $directory (id $id) does not exist")
                 Result.success(data)
             } catch (e: IOException) {
                 val errorMsg = "Failed to save file with id '$id': ${e.message}"
@@ -77,12 +76,11 @@ class FilesystemDS<D> (
                 logger.logError("Unexpected error in save for id '$id'", e)
                 Result.failure(e)
             }
-        }
+       // }
     }
 
     override suspend fun findById(id: String): Result<D> {
-        return mutex.withLock {
-            try {
+        return             try {               //mutex.withLock {
                 val file = File(directory, id)
                 if (file.exists()) {
                     val data: D = when (dataClass) {
@@ -111,7 +109,7 @@ class FilesystemDS<D> (
                 logger.logError("Unexpected error in findById for id '$id'", e)
                 Result.failure(e)
             }
-        }
+
     }
 
 

@@ -1,14 +1,14 @@
 package com.ajoinfinity.flexds.features.addcache
 
 import com.ajoinfinity.flexds.Flexds
+import com.ajoinfinity.flexds.features.FlexdsAddCache
 
 class AddCacheDecorator<D>(
     override val fds: Flexds<D>,
     override val cache: Flexds<D>,
-    override val fdsId: String = "${fds.fdsId}+Cache<${cache.fdsId}>"
-) : BaseAddCacheDecorator<D>(fds, cache) {
-
-    private val addCacheDelegate = AddCacheDelegate(fds, cache)
+    override val fdsId: String = "${fds.fdsId}+Cache<${cache.fdsId}>",
+    private val addCacheDelegate: AddCacheDelegate<D> = AddCacheDelegate(fds, cache)
+) : BaseAddCacheDecorator<D>(fds, cache), FlexdsAddCache by addCacheDelegate {
 
     override fun showDataflow(): String {
         return " [${cache.showDataflow()} ${fds.showDataflow()}] "
@@ -59,7 +59,7 @@ class AddCacheDecorator<D>(
     }
 
     override suspend fun findById(id: String): Result<D> {
-        addCacheDelegate.printCacheStatsIfNecessary()
+        addCacheDelegate.newRetrieval()
         return try {
             val localResult = cache.findById(id)
             if (localResult.isSuccess) {

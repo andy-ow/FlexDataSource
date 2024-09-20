@@ -1,5 +1,6 @@
 package com.ajoinfinity.flexds
 
+import com.ajoinfinity.flexds.features.FlexdsAddCache
 import com.ajoinfinity.flexds.features.FlexdsCore
 import com.ajoinfinity.flexds.features.FlexdsDelete
 import com.ajoinfinity.flexds.features.FlexdsListStoredIds
@@ -13,4 +14,5 @@ interface FlexdsFeatures<D> :
         FlexdsDelete<D>,
         FlexdsSize<D>,
         FlexdsGetDbLastModificationTime,
-        FlexdsListStoredIds<D>
+        FlexdsListStoredIds<D>,
+        FlexdsAddCache

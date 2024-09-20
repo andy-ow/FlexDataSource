@@ -3,6 +3,8 @@ package com.ajoinfinity.flexdsapp
 import com.ajoinfinity.flexds.FlexDataSourceManager
 import com.ajoinfinity.flexds.Flexds
 import com.ajoinfinity.flexds.FlexDSBuilder
+import com.ajoinfinity.flexds.features.addcache.AddCacheDecorator
+import com.ajoinfinity.flexds.features.addcache.BaseAddCacheDecorator
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
@@ -31,22 +33,27 @@ suspend fun <D> performSaveAndReadTest(
 
     // Read users
     val readTime = measureTimeMillis {
-        repeat(users.size) {
+        repeat(10*users.size) {
             val randomIndex = Random.nextInt(users.size) // Choose a random index
             val userId = "user$randomIndex"
             val savedUser = dataSource.findById(userId).getOrThrow()
             assert(users[randomIndex] == savedUser) { "Test Failed for $userId" }
         }
     }
-    println("Time to read ${users.size} users from ${dataSource.name}: $readTime ms")
+    println("Time to read 10 * ${users.size} users from ${dataSource.name}: $readTime ms")
+    if (dataSource is AddCacheDecorator) dataSource.displayCacheStats()
     println("Cleaning up...")
-    dataSource.deleteAll()
+    try {
+        dataSource.clearCacheStats()
+        dataSource.deleteAll()
+    } catch(e: NotImplementedError) { // ok
+         }
     println("Done.")
 }
 
 fun createUsers(numberOfUsers: Int): List<User> {
     return List(numberOfUsers) {
-        val randomName = getRandomString(Random.nextInt(1, 10001))  // Generate a random string of length 1 to 100
+        val randomName = getRandomString(Random.nextInt(1, 100001))  // Generate a random string of length 1 to 100
         User(name = randomName, age = it)
     }
 }
@@ -67,7 +74,7 @@ fun main() {
     // Test with MemoryDS using the updated builder
     val memoryDS = FlexDataSourceManager.memory<User>("ram")
         .withSizeDecorator { user -> (10 * user.name.length + 16).toLong() }
-        .withMaxSizeDecorator(maxSize = 100_000_000, percentToRemove = 0.5, )
+        //.withMaxSizeDecorator(maxSize = 100_000_000, percentToRemove = 0.5, )
         .build()
 
     // Test with FilesystemDS using the updated builder
@@ -78,12 +85,12 @@ fun main() {
         serializer = User.serializer()
     )
         .withSizeDecorator { user -> (10 * user.name.length + 16).toLong() }
-        .withMaxSizeDecorator(maxSize = 50_000_000, percentToRemove = 0.3)
+        //.withMaxSizeDecorator(maxSize = 50_000_000, percentToRemove = 0.3)
         .build()
 
     val cache = FlexDataSourceManager.memory<User>("MemCache")
-        .withSizeDecorator { user -> (10 * user.name.length + 16).toLong() }
-        .withMaxSizeDecorator(maxSize = 10_000_000, percentToRemove = 0.5)
+        .withSizeDecorator { user -> (5 * user.name.length + 16).toLong() }
+        .withMaxSizeDecorator(maxSize = 200_000_000, percentToRemove = 0.5)
         .build()
     // Test with FilesystemDS with Memory Cache using the updated builder
     val filesystemDSwithMemoryCache = FlexDataSourceManager.filesystem(
