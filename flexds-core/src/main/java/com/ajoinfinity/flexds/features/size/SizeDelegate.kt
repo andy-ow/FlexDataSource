@@ -9,7 +9,7 @@ import com.ajoinfinity.flexds.features.size.SizeDecorator.DataSourceSizeUnknownE
 class SizeDelegate<D>(
     val flexds: Flexds<D>,
     val getSize: (D) -> Long,
-): FlexdsSize<D> {
+) {
     private val logger = FlexDataSourceManager.logger
     private val NOT_INITIALIZED = -1L
     private val UNKNOWN = -2L
@@ -44,15 +44,15 @@ class SizeDelegate<D>(
         }
     }
 
-    override suspend fun getItemSize(data: D): Result<Long> {
+     fun getItemSize(data: D): Result<Long> {
         return Result.success(getSize(data))
     }
 
-    override suspend fun getItemSize(id: String): Result<Long> {
+     suspend fun getItemSize(id: String): Result<Long> {
         return getSizeFromHashMap(id)
     }
 
-    override suspend fun getFlexdsSize(): Result<Long> {
+     suspend fun getFlexdsSize(): Result<Long> {
         if (dataSourceSize.size < 0) recalculateDataSourceSize()
         if (dataSourceSize.size == NOT_INITIALIZED) return Result.failure(
             DataSourceSizeNotInitializedException()

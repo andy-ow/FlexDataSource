@@ -4,7 +4,7 @@ import com.ajoinfinity.flexds.basedatasources.FirebaseStorageDS
 import com.google.firebase.storage.FirebaseStorage
 
 // Convenience method to create FirebaseStorageDS
-fun <D> FlexDataSourceManager.Companion.firebaseStorage(
+fun <D> FlexDSBuilder.Companion.firebaseStorage(
     fdsId: String,
     firebaseStorage: FirebaseStorage,
     dataTypeName: String = "File"

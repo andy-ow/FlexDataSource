@@ -10,7 +10,7 @@ interface FlexdsAddCache<D> {
         }
 
     suspend fun displayCacheStats() {
-            throw NotImplementedError("Feature is not implemented. Please use AddCacheDecorator")
+        throw NotImplementedError("Feature is not implemented. Please use AddCacheDecorator")
     }
 
     fun clearCacheStats() {

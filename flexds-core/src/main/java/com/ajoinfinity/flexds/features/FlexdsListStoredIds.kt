@@ -1,11 +1,10 @@
 package com.ajoinfinity.flexds.features
 
-import com.ajoinfinity.flexds.exceptions.CompositeException
-import com.ajoinfinity.flexds.features.logger.FlexdsLogger
+interface FlexdsListStoredIds<D>: FlexdsCoreFeatures<D> {
 
-interface FlexdsListStoredIds<D>: FlexdsLogger, FlexdsDelete<D> {
-
-    suspend fun listStoredIds(): Result<List<String>>
+    suspend fun listStoredIds(): Result<List<String>> {
+            throw NotImplementedError("Feature is not implemented. Please use ListStoredIdsDecorator")
+        }
 
     suspend fun getNumberOfElements(): Result<Int> {
         return try {
@@ -31,7 +30,7 @@ interface FlexdsListStoredIds<D>: FlexdsLogger, FlexdsDelete<D> {
         return if (errors.isEmpty()) {
             Result.success(Unit)
         } else {
-            Result.failure(CompositeException(errors))
+            Result.failure(IllegalStateException("Could not delete all items because of following errors: $errors"))
         }
     }
 }

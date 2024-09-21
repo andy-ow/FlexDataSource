@@ -1,9 +1,8 @@
 package com.ajoinfinity.flexds.features.addcache
 
 import com.ajoinfinity.flexds.Flexds
-import com.ajoinfinity.flexds.Logger
+import com.ajoinfinity.flexds.features.logger.Logger
 import com.ajoinfinity.flexds.features.FlexdsAddCache
-import com.ajoinfinity.flexds.features.FlexdsSize
 
 class AddCacheDelegate<D>(
     private val fds: Flexds<D>,

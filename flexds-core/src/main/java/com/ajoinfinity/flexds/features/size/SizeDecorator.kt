@@ -7,10 +7,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class SizeDecorator<D>(
-    override val fds: Flexds<D>,
+    val fds: Flexds<D>,
     private val getSize: (D) -> Long,
     private val sizeDelegate: SizeDelegate<D> = SizeDelegate(fds, getSize)
-): BaseSizeDecorator<D>(fds), FlexdsSize<D> by sizeDelegate{
+): Flexds<D> by fds {
     class DataSourceSizeNotInitializedException: Exception("Datasource size not initialized")
     class DataSourceSizeUnknownException: Exception("Datasource size is unknown")
 
@@ -28,6 +28,18 @@ class SizeDecorator<D>(
                 // everything ok
             }
         }
+    }
+
+    override suspend fun getItemSize(data: D): Result<Long> {
+        return sizeDelegate.getItemSize(data)
+    }
+
+    override suspend fun getItemSize(id: String): Result<Long> {
+        return sizeDelegate.getItemSize(id)
+    }
+
+    override suspend fun getFlexdsSize(): Result<Long> {
+        return sizeDelegate.getFlexdsSize()
     }
 
     override suspend fun findById(id: String): Result<D> {

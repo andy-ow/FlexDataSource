@@ -5,11 +5,19 @@ import com.ajoinfinity.flexds.features.FlexdsAddCache
 import java.io.IOException
 
 class AddCacheDecorator<D>(
-    override val fds: Flexds<D>,
+    val fds: Flexds<D>,
     override val cache: Flexds<D>,
     override val fdsId: String = "${fds.fdsId}+Cache<${cache.fdsId}>",
     private val addCacheDelegate: AddCacheDelegate<D> = AddCacheDelegate(fds, cache)
-) : BaseAddCacheDecorator<D>(fds, cache), FlexdsAddCache<D> by addCacheDelegate {
+) : Flexds<D> by fds {
+
+    override fun clearCacheStats() {
+        addCacheDelegate.clearCacheStats()
+    }
+
+    override suspend fun displayCacheStats() {
+        addCacheDelegate.displayCacheStats()
+    }
 
     override fun showDataflow(): String {
         return " [${cache.showDataflow()} --> ${fds.showDataflow()}] "

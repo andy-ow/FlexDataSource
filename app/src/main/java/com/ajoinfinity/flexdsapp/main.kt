@@ -1,13 +1,11 @@
 package com.ajoinfinity.flexdsapp
 
+import com.ajoinfinity.flexds.FlexDSBuilder
 import com.ajoinfinity.flexds.FlexDataSourceManager
 import com.ajoinfinity.flexds.Flexds
-import com.ajoinfinity.flexds.FlexDSBuilder
 import com.ajoinfinity.flexds.features.addcache.AddCacheDecorator
-import com.ajoinfinity.flexds.features.addcache.BaseAddCacheDecorator
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.serializer
 import java.io.File
 import kotlin.random.Random
 
@@ -64,14 +62,14 @@ fun getRandomString(length: Int): String {
 }
 
 fun createFS(i: Int, cache: Flexds<User>): Flexds<User> {
-    return FlexDataSourceManager.indexedFilesystem(
+    return FlexDSBuilder.indexedFilesystem(
         filesDir = File("test_storage"),
         fdsId = "B$i",
         dataClass = User(name = "dummy", age = 100),
         serializer = User.serializer()
     )
-        .withCacheDecorator(cache)
-        .withSizeDecorator { user -> (10 * user.name.length + 16).toLong() }
+        .withCache(cache)
+        .withSize { user -> (10 * user.name.length + 16).toLong() }
         .build()
 }
 
@@ -83,71 +81,71 @@ fun main() {
     val filesDir5caches = File("test_storage_5caches")
 
     // Test with MemoryDS using the updated builder
-    val memoryDS = FlexDataSourceManager.memory<User>("ram")
-        .withSizeDecorator { user -> (10 * user.name.length + 16).toLong() }
+    val memoryDS = FlexDSBuilder.memory<User>("ram")
+        .withSize { user -> (10 * user.name.length + 16).toLong() }
         //.withMaxSizeDecorator(maxSize = 100_000_000, percentToRemove = 0.5, )
         .build()
 
     // Test with FilesystemDS using the updated builder
-    val filesystemDS = FlexDataSourceManager.filesystem(
+    val filesystemDS = FlexDSBuilder.filesystem(
         filesDir = filesDir,
         fdsId = "fs",
         dataClass = User(name = "dummy", age = 100),
         serializer = User.serializer()
     )
-        .withSizeDecorator { user -> (10 * user.name.length + 16).toLong() }
+        .withSize { user -> (10 * user.name.length + 16).toLong() }
         //.withMaxSizeDecorator(maxSize = 5_000_000, percentToRemove = 0.3)
         .build()
 
-    val cache = FlexDataSourceManager.memory<User>("MemCache")
-        .withSizeDecorator { user -> (5 * user.name.length + 16).toLong() }
-        .withMaxSizeDecorator(maxSize = 2_000_000, percentToRemove = 0.5)
+    val cache = FlexDSBuilder.memory<User>("MemCache")
+        .withSize { user -> (5 * user.name.length + 16).toLong() }
+        .withMaxSize(maxSize = 2_000_000, percentToRemove = 0.5)
         .build()
-    val cache2 = FlexDataSourceManager.memory<User>("MemCache2")
-        .withSizeDecorator { user -> (5 * user.name.length + 16).toLong() }
-        .withMaxSizeDecorator(maxSize = 2_000_000, percentToRemove = 0.5)
+    val cache2 = FlexDSBuilder.memory<User>("MemCache2")
+        .withSize { user -> (5 * user.name.length + 16).toLong() }
+        .withMaxSize(maxSize = 2_000_000, percentToRemove = 0.5)
         .build()
     // Test with FilesystemDS with Memory Cache using the updated builder
-    val filesystemDSwithMemoryCache = FlexDataSourceManager.filesystem(
+    val filesystemDSwithMemoryCache = FlexDSBuilder.filesystem(
         filesDir = filesDir,
         fdsId = "fs2",
         dataClass = User(name = "dummy", age = 100),
         serializer = User.serializer()
     )
-        .withCacheDecorator(cache)  // Use memory cache with filesystem
-        .withSizeDecorator { user -> (10 * user.name.length + 16).toLong() }
+        .withCache(cache)  // Use memory cache with filesystem
+        .withSize { user -> (10 * user.name.length + 16).toLong() }
         .build()
 
-    val indexedFilesystemDS = FlexDataSourceManager.indexedFilesystem(
+    val indexedFilesystemDS = FlexDSBuilder.indexedFilesystem(
         filesDir = filesDir,
         fdsId = "ind",
         dataClass = User(name = "dummy", age = 100),
         serializer = User.serializer()
     )
-        .withSizeDecorator { user -> (10 * user.name.length + 16).toLong() }
+        .withSize { user -> (10 * user.name.length + 16).toLong() }
         .build()
 
-    val indexedFilesystemDSwithCache = FlexDataSourceManager.indexedFilesystem(
+    val indexedFilesystemDSwithCache = FlexDSBuilder.indexedFilesystem(
         filesDir = filesDir,
         fdsId = "ind2",
         dataClass = User(name = "dummy", age = 100),
         serializer = User.serializer()
     )
-        .withCacheDecorator(cache2)
-        .withSizeDecorator { user -> (10 * user.name.length + 16).toLong() }
+        .withCache(cache2)
+        .withSize { user -> (10 * user.name.length + 16).toLong() }
         .build()
 
-    val fds5caches = FlexDataSourceManager.filesystem(
+    val fds5caches = FlexDSBuilder.filesystem(
         filesDir = filesDir5caches,
         fdsId = "fs5caches",
         dataClass = User(name = "dummy", age = 100),
         serializer = User.serializer()
     )
-        .withCacheDecorator(memoryDS)
-        .withCacheDecorator(filesystemDS)
-        .withCacheDecorator(filesystemDSwithMemoryCache)
-        .withCacheDecorator(indexedFilesystemDS)
-        .withCacheDecorator(indexedFilesystemDSwithCache)
+        .withCache(memoryDS)
+        .withCache(filesystemDS)
+        .withCache(filesystemDSwithMemoryCache)
+        .withCache(indexedFilesystemDS)
+        .withCache(indexedFilesystemDSwithCache)
         .build()
     println("dataflow: ${fds5caches.showDataflow()}")
 

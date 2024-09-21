@@ -5,7 +5,7 @@ import com.google.firebase.database.FirebaseDatabase
 import kotlinx.serialization.KSerializer
 
 // Convenience method to create FirebaseRtDatabaseDS
-fun <D> FlexDataSourceManager.Companion.firebaseRealtimeDatabase(
+fun <D> FlexDSBuilder.Companion.firebaseRealtimeDatabase(
     database: FirebaseDatabase,
     fdsId: String,
     clazz: Class<D>,  // Data class type

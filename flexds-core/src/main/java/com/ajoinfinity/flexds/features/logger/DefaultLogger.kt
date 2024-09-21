@@ -1,7 +1,5 @@
 package com.ajoinfinity.flexds.features.logger
 
-import com.ajoinfinity.flexds.Logger
-
 class DefaultLogger: Logger {
     override fun log(message: String) {
         println(message)
