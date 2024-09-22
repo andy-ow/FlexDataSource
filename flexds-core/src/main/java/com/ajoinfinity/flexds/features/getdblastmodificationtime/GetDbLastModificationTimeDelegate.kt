@@ -1,7 +1,7 @@
 package com.ajoinfinity.flexds.features.getdblastmodificationtime
 
-import com.ajoinfinity.flexds.Flexds
-import com.ajoinfinity.flexds.features.logger.Logger
+import com.ajoinfinity.flexds.main.Flexds
+import com.ajoinfinity.flexds.main.logger.Logger
 import com.ajoinfinity.flexds.features.addMetadata.FdsMetadata
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,16 +16,17 @@ class GetDbLastModificationTimeDelegate<D>(
     // Get the time, first checking the cache, otherwise fetching from the dbLastModificationTimeFds
     suspend fun getLastModificationTime(): Result<Long> {
         return fds.findByIdMetadata(dbLastModificationTimeMetadataPath)
-            .mapCatching { it.toString().toLong() }
+            .mapCatching {
+                it.toString().toLong() }
     }
 
     // Update the modification time to the current time and save it in dbLastModificationTimeFds
-    fun updateModificationTime() {
+    suspend fun updateModificationTime() {
         saveModificationTime(System.currentTimeMillis())
     }
 
     // Save the modification time to the storage Fds<String>
-    private fun saveModificationTime(time: Long) {
+    private suspend fun saveModificationTime(time: Long) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 fds.saveMetadata(dbLastModificationTimeMetadataPath, FdsMetadata(time.toString()))

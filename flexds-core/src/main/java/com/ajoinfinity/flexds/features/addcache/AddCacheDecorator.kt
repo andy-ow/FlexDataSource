@@ -1,7 +1,6 @@
 package com.ajoinfinity.flexds.features.addcache
 
-import com.ajoinfinity.flexds.Flexds
-import com.ajoinfinity.flexds.features.FlexdsAddCache
+import com.ajoinfinity.flexds.main.Flexds
 import java.io.IOException
 
 class AddCacheDecorator<D>(

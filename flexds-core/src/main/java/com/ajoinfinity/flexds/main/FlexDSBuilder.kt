@@ -1,4 +1,4 @@
-package com.ajoinfinity.flexds
+package com.ajoinfinity.flexds.main
 
 import com.ajoinfinity.flexds.basedatasources.FilesystemDS
 import com.ajoinfinity.flexds.basedatasources.IndexedFileFilesystemDS

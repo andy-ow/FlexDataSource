@@ -1,7 +1,6 @@
 package com.ajoinfinity.flexds.features.size
 
-import com.ajoinfinity.flexds.Flexds
-import com.ajoinfinity.flexds.features.FlexdsSize
+import com.ajoinfinity.flexds.main.Flexds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

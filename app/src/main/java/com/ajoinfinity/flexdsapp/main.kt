@@ -1,9 +1,8 @@
 package com.ajoinfinity.flexdsapp
 
-import com.ajoinfinity.flexds.FlexDSBuilder
-import com.ajoinfinity.flexds.FlexDataSourceManager
-import com.ajoinfinity.flexds.Flexds
 import com.ajoinfinity.flexds.features.addcache.AddCacheDecorator
+import com.ajoinfinity.flexds.main.FlexDSBuilder
+import com.ajoinfinity.flexds.main.Flexds
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import java.io.File
@@ -25,6 +24,8 @@ suspend fun <D> performSaveAndReadTest(
         users.forEachIndexed { index, user -> // Shuffle the list to randomize the order
             val userId = "user$index"
             dataSource.save(userId, user)
+            println("Last db modification time: ${dataSource.getLastModificationTime().getOrThrow()}")
+            println("itemlist: ${dataSource.listStoredIds()}")
         }
     }
     println("Time to save ${users.size} users in ${dataSource.name}: $saveTime ms")
@@ -80,9 +81,19 @@ fun main() {
     val filesDir = File("test_storage")
     val filesDir5caches = File("test_storage_5caches")
 
+    val fs_for_metadata = FlexDSBuilder.filesystem<String>(
+        filesDir = filesDir,
+        fdsId = "meta",
+        dataClass = "xx"
+        //serializer = User.serializer()
+    )
+        .build()
+
     // Test with MemoryDS using the updated builder
     val memoryDS = FlexDSBuilder.memory<User>("ram")
         .withSize { user -> (10 * user.name.length + 16).toLong() }
+        .withMetadata(fs_for_metadata)
+        .withLastModificationTime()
         //.withMaxSizeDecorator(maxSize = 100_000_000, percentToRemove = 0.5, )
         .build()
 
@@ -94,25 +105,31 @@ fun main() {
         serializer = User.serializer()
     )
         .withSize { user -> (10 * user.name.length + 16).toLong() }
+        .withMetadata(fs_for_metadata)
+        .withLastModificationTime()
         //.withMaxSizeDecorator(maxSize = 5_000_000, percentToRemove = 0.3)
         .build()
 
     val cache = FlexDSBuilder.memory<User>("MemCache")
+        .withMetadata(fs_for_metadata)
+        .withLastModificationTime()
         .withSize { user -> (5 * user.name.length + 16).toLong() }
-        .withMaxSize(maxSize = 2_000_000, percentToRemove = 0.5)
+        .withMaxSize(maxSize = 2_000, percentToRemove = 0.5)
         .build()
     val cache2 = FlexDSBuilder.memory<User>("MemCache2")
         .withSize { user -> (5 * user.name.length + 16).toLong() }
-        .withMaxSize(maxSize = 2_000_000, percentToRemove = 0.5)
+        .withMaxSize(maxSize = 2_000, percentToRemove = 0.5)
         .build()
     // Test with FilesystemDS with Memory Cache using the updated builder
     val filesystemDSwithMemoryCache = FlexDSBuilder.filesystem(
         filesDir = filesDir,
         fdsId = "fs2",
-        dataClass = User(name = "dummy", age = 100),
+        //dataClass = User(name = "dummy", age = 100),
         serializer = User.serializer()
     )
+        .withMetadata(fs_for_metadata)
         .withCache(cache)  // Use memory cache with filesystem
+        .withLastModificationTime()
         .withSize { user -> (10 * user.name.length + 16).toLong() }
         .build()
 
@@ -122,7 +139,9 @@ fun main() {
         dataClass = User(name = "dummy", age = 100),
         serializer = User.serializer()
     )
+        .withMetadata(fs_for_metadata)
         .withSize { user -> (10 * user.name.length + 16).toLong() }
+        .withLastModificationTime()
         .build()
 
     val indexedFilesystemDSwithCache = FlexDSBuilder.indexedFilesystem(
@@ -131,6 +150,8 @@ fun main() {
         dataClass = User(name = "dummy", age = 100),
         serializer = User.serializer()
     )
+        .withMetadata(fs_for_metadata)
+        .withLastModificationTime()
         .withCache(cache2)
         .withSize { user -> (10 * user.name.length + 16).toLong() }
         .build()
@@ -141,9 +162,11 @@ fun main() {
         dataClass = User(name = "dummy", age = 100),
         serializer = User.serializer()
     )
+        .withMetadata(fs_for_metadata)
         .withCache(memoryDS)
         .withCache(filesystemDS)
         .withCache(filesystemDSwithMemoryCache)
+        .withLastModificationTime()
         .withCache(indexedFilesystemDS)
         .withCache(indexedFilesystemDSwithCache)
         .build()

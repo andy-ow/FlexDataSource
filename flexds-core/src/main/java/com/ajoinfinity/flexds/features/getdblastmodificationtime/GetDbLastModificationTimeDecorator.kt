@@ -1,6 +1,6 @@
 package com.ajoinfinity.flexds.features.getdblastmodificationtime
 
-import com.ajoinfinity.flexds.Flexds
+import com.ajoinfinity.flexds.main.Flexds
 
 class GetDbLastModificationTimeDecorator<D>(
     private val fds: Flexds<D>,

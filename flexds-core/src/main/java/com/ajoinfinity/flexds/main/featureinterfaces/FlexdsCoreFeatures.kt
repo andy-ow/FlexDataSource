@@ -1,7 +1,7 @@
-package com.ajoinfinity.flexds.features
+package com.ajoinfinity.flexds.main.featureinterfaces
 
-import com.ajoinfinity.flexds.FlexDataSourceManager
-import com.ajoinfinity.flexds.features.logger.Logger
+import com.ajoinfinity.flexds.main.FlexDataSourceManager
+import com.ajoinfinity.flexds.main.logger.Logger
 
 interface FlexdsCoreFeatures<D> {
     val logger: Logger

@@ -1,4 +1,4 @@
-package com.ajoinfinity.flexds.features
+package com.ajoinfinity.flexds.main.featureinterfaces
 
 interface FlexdsListStoredIds<D>: FlexdsCoreFeatures<D> {
 

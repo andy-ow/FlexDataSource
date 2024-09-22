@@ -1,19 +1,17 @@
 package com.ajoinfinity.flexds.basedatasources
 
-import com.ajoinfinity.flexds.Flexds
+import com.ajoinfinity.flexds.main.Flexds
 import java.io.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
 class IndexedFileFilesystemDS<D>(
     filesDir: File,
     override val fdsId: String,
     private val dataClass: D = "some string" as D,
-    val serializer: KSerializer<D>,  // Serializer for the data
+    val serializer: KSerializer<D>?,  // Serializer for the data
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = false,
     override val dataTypeName: String = "File",
 ) : Flexds<D> {
@@ -30,13 +28,15 @@ class IndexedFileFilesystemDS<D>(
 
     }
 
-
     private val mutex = Mutex()
 
     // In-memory index for faster access
     private val indexMap = mutableMapOf<String, Pair<Long, Int>>()  // ID -> (offset, length)
 
     init {
+        require(dataClass is String || dataClass is ByteArray || serializer != null) {
+            "D must be either String, ByteArray, or provide a serializer"
+        }
         // Ensure the directory exists or try to create it
         if (!filesDir.exists()) {
             val created = filesDir.mkdirs()
@@ -87,9 +87,16 @@ class IndexedFileFilesystemDS<D>(
     override suspend fun save(id: String, data: D): Result<D> {
         return mutex.withLock {
             try {
-                val serializedData = json.encodeToString(serializer, data)
-                val dataBytes = serializedData.toByteArray()
-
+                val dataBytes = when (data) {
+                    is String -> data.toByteArray()
+                    is ByteArray -> data
+                    else -> {
+                        // Serialize other types using the provided serializer
+                        serializer?.let {
+                            json.encodeToString(it, data).toByteArray()
+                        } ?: throw IllegalArgumentException("Unsupported type: ${data!!::class.java}")
+                    }
+                }
                 // Write data to the end of the data file
                 RandomAccessFile(dataFile, "rw").use { raf ->
                     raf.seek(raf.length())  // Move to the end of the file
@@ -119,7 +126,18 @@ class IndexedFileFilesystemDS<D>(
                     raf.seek(offset)  // Move to the correct position
                     raf.readFully(dataBytes)
                 }
-                val data = json.decodeFromString(serializer, String(dataBytes))
+                val data: D = when (dataClass) {
+                    ByteArray::class.java -> dataBytes as D  // Directly cast the byte array to the target type
+                    String::class.java -> String(dataBytes) as D  // Convert byte array to a String
+                    else -> {
+                        // Check if a serializer is provided for other serializable types
+                        if (serializer != null) {
+                            json.decodeFromString(serializer, String(dataBytes)) as D  // Deserialize the data using the serializer
+                        } else {
+                            throw IllegalArgumentException("Unsupported type: ${dataClass!!::class.java}")
+                        }
+                    }
+                }
                 Result.success(data)
             } catch (e: Exception) {
                 Result.failure(IOException("Failed to read data: ${e.message}", e))

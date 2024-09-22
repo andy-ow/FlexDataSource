@@ -1,4 +1,4 @@
-package com.ajoinfinity.flexds.features.logger
+package com.ajoinfinity.flexds.main.logger
 
 class DefaultLogger: Logger {
     override fun log(message: String) {

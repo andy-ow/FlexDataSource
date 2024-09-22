@@ -1,8 +1,6 @@
 package com.ajoinfinity.flexds.features.maxsize
 
-import com.ajoinfinity.flexds.Flexds
-import com.ajoinfinity.flexds.features.FlexdsMaxSize
-import com.ajoinfinity.flexds.features.size.SizeDecorator
+import com.ajoinfinity.flexds.main.Flexds
 
 class MaxSizeDecorator<D>(
     val fds: Flexds<D>,

@@ -1,6 +1,6 @@
-package com.ajoinfinity.flexds.features
+package com.ajoinfinity.flexds.main.featureinterfaces
 
-import com.ajoinfinity.flexds.Flexds
+import com.ajoinfinity.flexds.main.Flexds
 
 interface FlexdsAddCache<D> {
 

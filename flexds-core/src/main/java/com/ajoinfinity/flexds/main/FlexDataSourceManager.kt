@@ -1,7 +1,7 @@
-package com.ajoinfinity.flexds
+package com.ajoinfinity.flexds.main
 
-import com.ajoinfinity.flexds.features.logger.DefaultLogger
-import com.ajoinfinity.flexds.features.logger.Logger
+import com.ajoinfinity.flexds.main.logger.DefaultLogger
+import com.ajoinfinity.flexds.main.logger.Logger
 
 
 class FlexDataSourceManager {

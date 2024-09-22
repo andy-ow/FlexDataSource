@@ -1,7 +1,7 @@
 // FirebaseRtDatabaseDS.kt
 package com.ajoinfinity.flexds.basedatasources
 
-import com.ajoinfinity.flexds.Flexds
+import com.ajoinfinity.flexds.main.Flexds
 import kotlinx.coroutines.tasks.await
 
 import com.google.firebase.database.FirebaseDatabase

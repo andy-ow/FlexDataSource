@@ -1,8 +1,7 @@
 package com.ajoinfinity.flexds.features.size
 
-import com.ajoinfinity.flexds.Flexds
-import com.ajoinfinity.flexds.FlexDataSourceManager
-import com.ajoinfinity.flexds.features.FlexdsSize
+import com.ajoinfinity.flexds.main.Flexds
+import com.ajoinfinity.flexds.main.FlexDataSourceManager
 import com.ajoinfinity.flexds.features.size.SizeDecorator.DataSourceSizeNotInitializedException
 import com.ajoinfinity.flexds.features.size.SizeDecorator.DataSourceSizeUnknownException
 
@@ -92,12 +91,12 @@ class SizeDelegate<D>(
     }
 
     private suspend fun recalculateDataSourceSize() {
-        dataSourceSize.invalidate()
         try {
             val sum = flexds.listStoredIds().getOrThrow().map { getSizeFromHashMap(it) }
                 .sumOf { it.getOrThrow() }
             dataSourceSize.initialize(sum)
         } catch(e: Exception) {
+            dataSourceSize.invalidate()
             logger.logError("${flexds.name}: Could not calculate datasource size", e)
         }
     }

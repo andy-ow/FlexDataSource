@@ -1,4 +1,4 @@
-package com.ajoinfinity.flexds.features.logger
+package com.ajoinfinity.flexds.main.logger
 
 interface Logger {
     fun log(message: String)

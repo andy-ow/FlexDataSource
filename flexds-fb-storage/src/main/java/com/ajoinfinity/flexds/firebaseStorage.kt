@@ -1,6 +1,7 @@
 package com.ajoinfinity.flexds
 
 import com.ajoinfinity.flexds.basedatasources.FirebaseStorageDS
+import com.ajoinfinity.flexds.main.FlexDSBuilder
 import com.google.firebase.storage.FirebaseStorage
 
 // Convenience method to create FirebaseStorageDS

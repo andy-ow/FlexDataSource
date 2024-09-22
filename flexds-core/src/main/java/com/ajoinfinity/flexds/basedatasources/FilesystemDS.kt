@@ -1,6 +1,6 @@
 package com.ajoinfinity.flexds.basedatasources
 
-import com.ajoinfinity.flexds.Flexds
+import com.ajoinfinity.flexds.main.Flexds
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.KSerializer
@@ -28,7 +28,7 @@ class FilesystemDS<D> (
     private val mutex = Mutex()
     init {
         require(dataClass is String || dataClass is ByteArray || serializer != null) {
-            "D must be either String, ByteArray, or Serializable"
+            "D must be either String, ByteArray, or provide a serializer"
         }
         // Ensure the directory exists or try to create it
         if (!directory.exists()) {
@@ -51,7 +51,7 @@ class FilesystemDS<D> (
     }
 
     override suspend fun save(id: String, data: D): Result<D> {
-        //mutex.withLock {
+        mutex.withLock {
            return try {
                 val file = File(directory, id)
                 when (data) {
@@ -74,22 +74,22 @@ class FilesystemDS<D> (
                 logger.logError("Unexpected error in save for id '$id'", e)
                 Result.failure(e)
             }
-       // }
+        }
     }
 
     override suspend fun findById(id: String): Result<D> {
-        return             try {               //mutex.withLock {
+        return try { mutex.withLock {
                 val file = File(directory, id)
                 if (file.exists()) {
                     val data: D = when (dataClass) {
-                        ByteArray::class.java -> file.readBytes() as D
-                        String::class.java -> file.readText() as D
+                        is ByteArray -> file.readBytes() as D
+                        is String -> file.readText() as D
                         else -> {
                             // Check if a serializer is provided for Serializable types
                             if (serializer != null) {
                                 json.decodeFromString(serializer, file.readText()) as D
                             } else {
-                                throw IllegalArgumentException("Unsupported type: ${dataClass!!::class.java}")
+                                throw IllegalArgumentException("No serializer provided for: ${dataClass!!::class.java}")
                             }
                         }
                     }
@@ -98,7 +98,7 @@ class FilesystemDS<D> (
                     val errorMsg = "File not found with id '$id'"
                     logger.logError(errorMsg)
                     Result.failure(FileNotFoundException(errorMsg))
-                }
+                }}
             } catch (e: IOException) {
                 val errorMsg = "Failed to read file with id '$id': ${e.message}"
                 logger.logError(errorMsg, e)

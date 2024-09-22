@@ -1,6 +1,6 @@
 package com.ajoinfinity.flexds.features.liststoredids
 
-import com.ajoinfinity.flexds.Flexds
+import com.ajoinfinity.flexds.main.Flexds
 import com.ajoinfinity.flexds.features.addMetadata.FdsMetadata
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
