@@ -13,7 +13,7 @@ plugins {
 }
 
 val githubProperties = Properties()
-githubProperties.load(FileInputStream("/home/andrzej/programowanie/android/github.properties"))
+githubProperties.load(FileInputStream("~/programowanie/android/github.properties"))
 project.afterEvaluate {
     publishing {
         repositories {
