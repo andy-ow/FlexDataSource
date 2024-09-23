@@ -12,7 +12,7 @@ import java.io.IOException
 class FilesystemDS<D> (
     filesDir: File,
     override val fdsId: String,
-    private val dataClass: D = "some string" as D,
+    private val dataExample: D, // = "some string" as D,
     val serializer: KSerializer<D>? = null,
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = false,
     override val dataTypeName: String = "File",
@@ -27,8 +27,8 @@ class FilesystemDS<D> (
 
     private val mutex = Mutex()
     init {
-        require(dataClass is String || dataClass is ByteArray || serializer != null) {
-            "D must be either String, ByteArray, or provide a serializer"
+        require(dataExample is String || dataExample is ByteArray || serializer != null) {
+            "D and dataExample must be either String, ByteArray, or provide a serializer"
         }
         // Ensure the directory exists or try to create it
         if (!directory.exists()) {
@@ -81,7 +81,7 @@ class FilesystemDS<D> (
         return try { mutex.withLock {
                 val file = File(directory, id)
                 if (file.exists()) {
-                    val data: D = when (dataClass) {
+                    val data: D = when (dataExample) {
                         is ByteArray -> file.readBytes() as D
                         is String -> file.readText() as D
                         else -> {
@@ -89,7 +89,7 @@ class FilesystemDS<D> (
                             if (serializer != null) {
                                 json.decodeFromString(serializer, file.readText()) as D
                             } else {
-                                throw IllegalArgumentException("No serializer provided for: ${dataClass!!::class.java}")
+                                throw IllegalArgumentException("No serializer provided for: ${dataExample!!::class.java}")
                             }
                         }
                     }

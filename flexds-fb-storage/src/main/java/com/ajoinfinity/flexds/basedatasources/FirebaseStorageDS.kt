@@ -11,13 +11,16 @@ import java.io.InputStream
 class FirebaseStorageDS<D>(
     override val fdsId: String,
     firebaseStorage: FirebaseStorage,
-    override val dataTypeName: String = "File",
+    override val dataTypeName: String, // must be set
     override val name: String = "FirebaseStorage-$fdsId",
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = true
 ) : Flexds<D> {
 
     private val firebaseStorageRoot: StorageReference = firebaseStorage.reference.child(fdsId)
 
+    init {
+        require(dataTypeName in listOf("ByteArray", "InputStream", "File")) { "dataTypeName must be ByteArray, InputStream, or File" }
+    }
     // Check if the file with the given id exists in Firebase Storage
     override suspend fun containsId(id: String): Result<Boolean> {
         return try {

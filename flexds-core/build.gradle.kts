@@ -3,7 +3,7 @@ import java.util.Properties
 
 val artifactId = "flexds-core"
 val groupId = "com.ajoinfinity.flexds"
-val myversion = "0.0.7"
+val myversion = "0.0.10"
 
 group = groupId
 
@@ -14,7 +14,7 @@ plugins {
 }
 
 val githubProperties = Properties()
-githubProperties.load(FileInputStream("~/programowanie/android/github.properties"))
+githubProperties.load(FileInputStream("/home/andrzej/programowanie/android/github.properties"))
 project.afterEvaluate {
     publishing {
         repositories {

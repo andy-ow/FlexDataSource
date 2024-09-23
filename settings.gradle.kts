@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 pluginManagement {
     repositories {
         google {
@@ -17,6 +20,20 @@ dependencyResolutionManagement {
         mavenLocal()
         google()
         mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+        repositories {
+            maven {
+                val githubProperties = Properties()
+                githubProperties.load(FileInputStream("/home/andrzej/programowanie/android/github.properties"))
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/andy-ow/FlexDataSource")
+                credentials {
+                    username = githubProperties["gpr.user"] as String? ?: System.getenv("GPR_USER")
+                    password =
+                        githubProperties["gpr.key"] as String? ?: System.getenv("GPR_API_KEY")
+                }
+            }
+        }
     }
 }
 

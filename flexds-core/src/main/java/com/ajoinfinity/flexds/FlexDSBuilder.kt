@@ -1,4 +1,4 @@
-package com.ajoinfinity.flexds.main
+package com.ajoinfinity.flexds
 
 import com.ajoinfinity.flexds.basedatasources.FilesystemDS
 import com.ajoinfinity.flexds.basedatasources.IndexedFileFilesystemDS
@@ -9,6 +9,7 @@ import com.ajoinfinity.flexds.features.getdblastmodificationtime.GetDbLastModifi
 import com.ajoinfinity.flexds.features.liststoredids.ListStoredIdsDecorator
 import com.ajoinfinity.flexds.features.maxsize.MaxSizeDecorator
 import com.ajoinfinity.flexds.features.size.SizeDecorator
+import com.ajoinfinity.flexds.main.Flexds
 import kotlinx.serialization.KSerializer
 import java.io.File
 
@@ -45,6 +46,18 @@ class FlexDSBuilder<D>(fds: Flexds<D>) {
     fun withCache(cache: Flexds<D>): FlexDSBuilder<D> {
         decoratedFds = AddCacheDecorator(decoratedFds, cache)
         return this
+    }
+
+    fun withCacheMemory(): FlexDSBuilder<D> {
+        val cacheFdsId = "${decoratedFds.fdsId}-memcache"
+        val cache = MemoryDS<D>(cacheFdsId)
+        return withCache(cache)
+    }
+
+    fun withCacheInFilesystem(filesDir: File, dataExample: D): FlexDSBuilder<D> {
+        val cacheFdsId = "${decoratedFds.fdsId}-filesystemcache"
+        val cache = FilesystemDS<D>(filesDir, cacheFdsId, dataExample)
+        return withCache(cache)
     }
 
     // Add a cache decorator

@@ -4,7 +4,7 @@ import java.util.Properties
 val artifactId = "flexds-fb-realtime"
 val groupId = "com.ajoinfinity.flexds"
 group = groupId
-val myversion = "0.0.5"
+val myversion = "0.0.6"
 
 plugins {
     alias(libs.plugins.android.library)
@@ -13,7 +13,7 @@ plugins {
 }
 
 val githubProperties = Properties()
-githubProperties.load(FileInputStream("~/programowanie/android/github.properties"))
+githubProperties.load(FileInputStream("/home/andrzej/programowanie/android/github.properties"))
 project.afterEvaluate {
     publishing {
         repositories {
