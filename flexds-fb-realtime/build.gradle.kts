@@ -4,7 +4,7 @@ import java.util.Properties
 val artifactId = "flexds-fb-realtime"
 val groupId = "com.ajoinfinity.flexds"
 group = groupId
-val myversion = "0.0.6"
+val myversion = "0.0.7"
 
 plugins {
     alias(libs.plugins.android.library)
