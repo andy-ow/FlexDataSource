@@ -5,7 +5,7 @@ import com.ajoinfinity.flexds.main.Flexds
 
 class LoggingDecorator<D>(
     private val fds: Flexds<D>,
-    private val prefix: String
+    private val prefix: String = fds.name
 ) : Flexds<D> {
 
     private fun log(funcname: String, message: String) {

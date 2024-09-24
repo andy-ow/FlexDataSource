@@ -62,19 +62,38 @@ class FlexDSBuilder<D>(
         decoratedFds = AddCacheDecorator(decoratedFds, cache)
         return this
     }
-
+//--------------
     fun withCacheMemory(): FlexDSBuilder<D> {
+        return withCache(createCacheMemory())
+    }
+    fun withCacheMemoryLogged(prefix: String? = null): FlexDSBuilder<D> {
+        return if (prefix == null) {
+            withCache(LoggingDecorator<D>(createCacheMemory()))
+        } else {
+            withCache(LoggingDecorator<D>(createCacheMemory(), prefix))
+        }
+    }
+    private fun createCacheMemory(): Flexds<D> {
         val cacheFdsId = "${decoratedFds.fdsId}-memcache"
         val cache = MemoryDS<D>(cacheFdsId, dataClazz)
-        return withCache(cache)
+        return cache
     }
-
+//--------------
     fun withCacheInFilesystem(filesDir: File, ): FlexDSBuilder<D> {
-        val cacheFdsId = "${decoratedFds.fdsId}-filesystemcache"
-        val cache = FilesystemDS<D>(filesDir, cacheFdsId, dataClazz, serializer)
-        return withCache(cache)
+        return withCache(createCacheInFilesystem(filesDir))
     }
-
+    fun withCacheInFilesystemLogged(filesDir: File, prefix: String? = null): FlexDSBuilder<D> {
+        return if (prefix == null) {
+            withCache(LoggingDecorator<D>(createCacheInFilesystem(filesDir)))
+        } else {
+            withCache(LoggingDecorator<D>(createCacheInFilesystem(filesDir), prefix))
+        }
+    }
+    private fun createCacheInFilesystem(filesDir: File): Flexds<D> {
+        val cacheFdsId = "${decoratedFds.fdsId}-filesystemcache"
+        return FilesystemDS<D>(filesDir, cacheFdsId, dataClazz, serializer)
+    }
+//--------------
     // Add a cache decorator
     fun withMetadata(metadataFds: Flexds<String>): FlexDSBuilder<D> {
         decoratedFds = AddMetadataDecorator(decoratedFds, metadataFds)
