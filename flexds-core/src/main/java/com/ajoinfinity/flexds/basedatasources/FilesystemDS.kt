@@ -13,10 +13,9 @@ class FilesystemDS<D> (
     filesDir: File,
     override val fdsId: String,
     // private val dataExample: D, // = "some string" as D,
-    private val dataClazz: Class<D>,
+    override val dataClazz: Class<D>,
     val serializer: KSerializer<D>? = null,
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = false,
-    override val dataTypeName: String = "File",
 ) : Flexds<D> {
 
     private val json: Json = Json { prettyPrint = true }
@@ -29,7 +28,7 @@ class FilesystemDS<D> (
     private val mutex = Mutex()
     init {
         require(dataClazz == String::class.java || dataClazz == ByteArray::class.java || serializer != null) {
-            "D and dataExample must be either String, ByteArray, or provide a serializer"
+            "dataClazz must be either String, ByteArray, or provide a serializer"
         }
         // Ensure the directory exists or try to create it
         if (!directory.exists()) {

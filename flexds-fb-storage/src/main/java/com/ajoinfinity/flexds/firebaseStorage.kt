@@ -10,10 +10,9 @@ fun <D> FlexDSBuilder.Companion.firebaseStorage(
     firebaseStorage: FirebaseStorage,
     dataClazz: Class<D>,
     serializer: KSerializer<D>?,
-    dataTypeName: String = "File"
 ): FlexDSBuilder<D> {
     return FlexDSBuilder(
-        FirebaseStorageDS(fdsId, firebaseStorage, dataClazz, dataTypeName),
+        FirebaseStorageDS(fdsId, firebaseStorage, dataClazz, ),
         dataClazz = dataClazz,
         serializer = serializer,)
 }

@@ -11,8 +11,7 @@ import java.io.InputStream
 class FirebaseStorageDS<D>(
     override val fdsId: String,
     firebaseStorage: FirebaseStorage,
-    val dataClazz: Class<D>,
-    override val dataTypeName: String, // must be set
+    override val dataClazz: Class<D>,
     override val name: String = "FirebaseStorage-$fdsId",
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = true
 ) : Flexds<D> {
@@ -20,8 +19,9 @@ class FirebaseStorageDS<D>(
     private val firebaseStorageRoot: StorageReference = firebaseStorage.reference.child(fdsId)
 
     init {
-        require(dataTypeName in listOf("ByteArray", "InputStream", "File")) { "dataTypeName must be ByteArray, InputStream, or File" }
-    }
+        require(dataClazz == InputStream::class.java || dataClazz == ByteArray::class.java || dataClazz == File::class.java) {
+            "dataClazz must be either InputStream, ByteArray, or File"
+        }    }
     // Check if the file with the given id exists in Firebase Storage
     override suspend fun containsId(id: String): Result<Boolean> {
         return try {
@@ -67,7 +67,7 @@ class FirebaseStorageDS<D>(
                     storageRef.getFile(localFile).await()
                     localFile as D
                 }
-                else -> throw IllegalArgumentException("Unsupported type for retrieval: $dataTypeName")
+                else -> throw IllegalArgumentException("Unsupported type for retrieval: ${dataClazz.name}")
             }
             Result.success(data)
         } catch (e: Exception) {

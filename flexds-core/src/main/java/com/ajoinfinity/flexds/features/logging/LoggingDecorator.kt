@@ -5,8 +5,8 @@ import com.ajoinfinity.flexds.main.Flexds
 
 class LoggingDecorator<D>(
     private val fds: Flexds<D>,
-    private val prefix: String = fds.name
-) : Flexds<D> {
+    private val prefix: String = fds.name,
+) : Flexds<D> by fds {
 
     private fun log(funcname: String, message: String) {
         logger.log("$prefix: $funcname: $message")
@@ -17,18 +17,6 @@ class LoggingDecorator<D>(
         log(funcname, "started")
         return block().also { result -> log(funcname, "result: $result") }
     }
-
-    override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean
-        get() = fds.SHOULD_NOT_BE_USED_AS_CACHE
-
-    override val fdsId: String
-        get() = fds.fdsId
-
-    override val name: String
-        get() = fds.name
-
-    override val dataTypeName: String
-        get() = fds.dataTypeName
 
     override suspend fun containsId(id: String): Result<Boolean> {
         return logAndExecute("containsId(id: $id)") { fds.containsId(id) }

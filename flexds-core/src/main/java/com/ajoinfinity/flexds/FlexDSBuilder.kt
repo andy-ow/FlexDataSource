@@ -25,8 +25,8 @@ class FlexDSBuilder<D>(
 
     companion object {
         // Convenience methods to create builders for MemoryDS and FilesystemDS
-        fun <D> memory(fdsId: String, dataClazz: Class<D>, serializer: KSerializer<D>?, dataTypeName: String = "Item"): FlexDSBuilder<D> {
-            return FlexDSBuilder(MemoryDS(fdsId, dataClazz, dataTypeName), dataClazz, serializer)
+        fun <D> memory(fdsId: String, dataClazz: Class<D>, serializer: KSerializer<D>?, ): FlexDSBuilder<D> {
+            return FlexDSBuilder(MemoryDS(fdsId, dataClazz, ), dataClazz, serializer)
         }
 
         fun <D> filesystem(

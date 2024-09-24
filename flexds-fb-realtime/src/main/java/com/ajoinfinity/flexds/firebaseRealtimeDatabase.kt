@@ -10,7 +10,6 @@ fun <D> FlexDSBuilder.Companion.firebaseRealtimeDatabase(
     fdsId: String,
     clazz: Class<D>,  // Data class type
     serializer: KSerializer<D>? = null,  // Optional serializer for custom objects
-    dataTypeName: String = "Data"
 ): FlexDSBuilder<D> {
     return FlexDSBuilder(
         FirebaseRtDatabaseDS(
@@ -18,7 +17,6 @@ fun <D> FlexDSBuilder.Companion.firebaseRealtimeDatabase(
             fdsId = fdsId,
             dataClazz = clazz,
             name = "FirebaseRealtimeDb-'$fdsId'",
-            dataTypeName = dataTypeName
         ),
         dataClazz = clazz,
         serializer = serializer,

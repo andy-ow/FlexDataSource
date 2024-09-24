@@ -82,7 +82,7 @@ class AddCacheDecorator<D>(
                 remoteResult
             }
         } catch (e: Exception) {
-            logger.logError("AddCacheDecorator: findById: Could not find $dataTypeName $id", e)
+            logger.logError("AddCacheDecorator: findById: Could not find ${dataClazz.simpleName} $id", e)
             Result.failure(e)
         }
 
@@ -90,7 +90,7 @@ class AddCacheDecorator<D>(
 
     override suspend fun delete(id: String): Result<String> {
 
-        val cacheResult = if (cache.containsId(id).getOrThrow()) cache.delete(id) else Result.success(Unit)
+        if (cache.containsId(id).getOrNull() ?: false) cache.delete(id)
         //if (cacheResult.isFailure) logger.logError("Failed to delete in cache: $id")
 
         return fds.delete(id).also {
@@ -103,7 +103,7 @@ class AddCacheDecorator<D>(
     override suspend fun deleteAll(): Result<Unit> {
         return if ((listOf(fds.deleteAll(),cache.deleteAll()).all { it.isSuccess }))
             Result.success(Unit)
-        else Result.failure(IOException("Could not deleteAll ${fds.name} and/or ${cache.name}"))
+        else Result.failure(IOException("Could not deleteAll ${fds.name} and/or deleteAll in ${cache.name}"))
     }
 
     override suspend fun listStoredIds(): Result<List<String>> {

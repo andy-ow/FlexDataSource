@@ -51,7 +51,7 @@ class MaxSizeDecorator<D>(
                 fds.update(id, data)
             }
         } else {
-            logger.logError("Could not determine old or new size for $dataTypeName $id")
+            logger.logError("Could not determine old or new size for ${dataClazz.simpleName} $id")
             Result.failure(Exception("Size calculation error"))
         }
     }
@@ -62,7 +62,7 @@ class MaxSizeDecorator<D>(
         dataSize: Result<Long>
     ): Result<D> {
         return if (shouldPreventSaveWhenExceeded) {
-            Result.failure(Exception("Max size exceeded. Cannot save data for $dataTypeName $id"))
+            Result.failure(Exception("Max size exceeded. Cannot save data for ${dataClazz.simpleName} $id"))
         } else {
             dataSize.getOrNull()?.let { freeUpSpace(it) }
             fds.save(id, data)
@@ -75,7 +75,7 @@ class MaxSizeDecorator<D>(
                 fds.getFlexdsSize().getOrThrow() + dataSize.getOrThrow() > maxSize
             )
         } catch (e: Exception) {
-            Result.failure(IllegalArgumentException("Could not determine $dataTypeName size"))
+            Result.failure(IllegalArgumentException("Could not determine ${dataClazz.simpleName} size"))
         }
     }
 

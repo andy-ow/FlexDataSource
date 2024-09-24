@@ -8,8 +8,7 @@ import java.io.FileNotFoundException
 
 class MemoryDS<D> constructor(
     override val fdsId: String,
-    val dataClazz: Class<D>,
-    override val dataTypeName: String = "Item",
+    override val dataClazz: Class<D>,
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = false,
 ) : Flexds<D> {
 
@@ -69,7 +68,7 @@ class MemoryDS<D> constructor(
                     memoryStore[id] = dataEntry.first to getCurrentTime()
                     Result.success(dataEntry.first)
                 } else {
-                    val errorMsg = "$name: $dataTypeName not found: '$id'"
+                    val errorMsg = "$name: ${dataClazz.simpleName} not found: '$id'"
                     //logger.logError(errorMsg)
                     Result.failure(IllegalArgumentException(errorMsg))
                 }
@@ -99,7 +98,7 @@ class MemoryDS<D> constructor(
                 if (memoryStore.remove(id) != null) {
                     Result.success(id)
                 } else {
-                    val errorMsg = "$name: $dataTypeName not found: '$id'"
+                    val errorMsg = "$name: ${dataClazz.simpleName} not found: '$id'"
                     //logger.logError(errorMsg)
                     Result.failure(FileNotFoundException(errorMsg))
                 }

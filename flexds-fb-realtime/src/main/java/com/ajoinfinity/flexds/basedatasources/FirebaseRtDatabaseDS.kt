@@ -10,15 +10,14 @@ import kotlinx.serialization.KSerializer
 class FirebaseRtDatabaseDS<D>(
     database: FirebaseDatabase,
     override val fdsId: String,
-    private val dataClazz: Class<D>,
+    override val dataClazz: Class<D>,
     override val name: String = "FirebaseRealtimeDb-'$fdsId'",
-    override val dataTypeName: String = "Data",
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = true,
 ) : Flexds<D> {
 
     private val root = database.reference.child(fdsId)
     private val lastChangedRef = root.child("last_changed")
-    private val nodesRef = root.child(dataTypeName)
+    private val nodesRef = root.child(dataClazz.simpleName)
 
     override suspend fun getNumberOfElements(): Result<Int> {
         return try {

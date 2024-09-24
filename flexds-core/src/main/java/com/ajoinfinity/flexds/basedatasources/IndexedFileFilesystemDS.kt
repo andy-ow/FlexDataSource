@@ -11,10 +11,9 @@ class IndexedFileFilesystemDS<D>(
     filesDir: File,
     override val fdsId: String,
     //private val dataClass: D = "some string" as D,
-    private val dataClazz: Class<D>,
+    override val dataClazz: Class<D>,
     val serializer: KSerializer<D>?,  // Serializer for the data
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = false,
-    override val dataTypeName: String = "File",
 ) : Flexds<D> {
 
     private val json: Json = Json { prettyPrint = true }
