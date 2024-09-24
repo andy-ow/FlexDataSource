@@ -14,12 +14,13 @@ fun <D> FlexDSBuilder.Companion.firebaseRealtimeDatabase(
 ): FlexDSBuilder<D> {
     return FlexDSBuilder(
         FirebaseRtDatabaseDS(
-            database,
-            fdsId,
-            clazz,
-            serializer,
+            database = database,
+            fdsId = fdsId,
+            dataClazz = clazz,
             name = "FirebaseRealtimeDb-'$fdsId'",
             dataTypeName = dataTypeName
-        )
+        ),
+        dataClazz = clazz,
+        serializer = serializer,
     )
 }

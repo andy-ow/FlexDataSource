@@ -7,39 +7,54 @@ import com.ajoinfinity.flexds.features.addMetadata.AddMetadataDecorator
 import com.ajoinfinity.flexds.features.addcache.AddCacheDecorator
 import com.ajoinfinity.flexds.features.getdblastmodificationtime.GetDbLastModificationTimeDecorator
 import com.ajoinfinity.flexds.features.liststoredids.ListStoredIdsDecorator
+import com.ajoinfinity.flexds.features.logging.LoggingDecorator
 import com.ajoinfinity.flexds.features.maxsize.MaxSizeDecorator
 import com.ajoinfinity.flexds.features.size.SizeDecorator
 import com.ajoinfinity.flexds.main.Flexds
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializer
 import java.io.File
 
 // FlexDSBuilder class for building Flexds with decorators
-class FlexDSBuilder<D>(fds: Flexds<D>) {
+class FlexDSBuilder<D>(
+    fds: Flexds<D>,
+    private var dataClazz: Class<D>,
+    private var serializer: KSerializer<D>? = null
+    ) {
     private var decoratedFds: Flexds<D> = fds
+
     companion object {
         // Convenience methods to create builders for MemoryDS and FilesystemDS
-        fun <D> memory(fdsId: String, dataTypeName: String = "Item"): FlexDSBuilder<D> {
-            return FlexDSBuilder(MemoryDS(fdsId, dataTypeName))
+        fun <D> memory(fdsId: String, dataClazz: Class<D>, serializer: KSerializer<D>?, dataTypeName: String = "Item"): FlexDSBuilder<D> {
+            return FlexDSBuilder(MemoryDS(fdsId, dataClazz, dataTypeName), dataClazz, serializer)
         }
 
         fun <D> filesystem(
             filesDir: File,
             fdsId: String,
-            dataClass: D = "some string" as D,
+            //dataClass: D = "some string" as D,
+            dataClazz: Class<D>,
             serializer: KSerializer<D>? = null
         ): FlexDSBuilder<D> {
-            return FlexDSBuilder(FilesystemDS(filesDir, fdsId, dataClass, serializer))
+            return FlexDSBuilder(FilesystemDS(filesDir, fdsId, dataClazz, serializer), dataClazz, serializer)
         }
 
         // Convenience method to create IndexedFileFilesystemDS
         fun <D> indexedFilesystem(
             filesDir: File,
             fdsId: String,
-            dataClass: D = "some string" as D,
+            //dataClass: D = "some string" as D,
+            dataClazz: Class<D>,
             serializer: KSerializer<D>  // Serializer is required here
         ): FlexDSBuilder<D> {
-            return FlexDSBuilder(IndexedFileFilesystemDS(filesDir, fdsId, dataClass, serializer))
+            return FlexDSBuilder(IndexedFileFilesystemDS(filesDir, fdsId, dataClazz, serializer), dataClazz, serializer)
         }
+    }
+
+    // add logging
+    fun withLogging(prefix: String = decoratedFds.name): FlexDSBuilder<D> {
+        decoratedFds = LoggingDecorator<D>(decoratedFds, prefix)
+        return this
     }
 
     // Add a cache decorator
@@ -50,13 +65,13 @@ class FlexDSBuilder<D>(fds: Flexds<D>) {
 
     fun withCacheMemory(): FlexDSBuilder<D> {
         val cacheFdsId = "${decoratedFds.fdsId}-memcache"
-        val cache = MemoryDS<D>(cacheFdsId)
+        val cache = MemoryDS<D>(cacheFdsId, dataClazz)
         return withCache(cache)
     }
 
-    fun withCacheInFilesystem(filesDir: File, dataExample: D): FlexDSBuilder<D> {
+    fun withCacheInFilesystem(filesDir: File, ): FlexDSBuilder<D> {
         val cacheFdsId = "${decoratedFds.fdsId}-filesystemcache"
-        val cache = FilesystemDS<D>(filesDir, cacheFdsId, dataExample)
+        val cache = FilesystemDS<D>(filesDir, cacheFdsId, dataClazz, serializer)
         return withCache(cache)
     }
 

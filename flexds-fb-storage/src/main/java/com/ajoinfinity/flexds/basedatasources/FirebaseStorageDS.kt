@@ -11,6 +11,7 @@ import java.io.InputStream
 class FirebaseStorageDS<D>(
     override val fdsId: String,
     firebaseStorage: FirebaseStorage,
+    val dataClazz: Class<D>,
     override val dataTypeName: String, // must be set
     override val name: String = "FirebaseStorage-$fdsId",
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = true
@@ -58,10 +59,10 @@ class FirebaseStorageDS<D>(
     override suspend fun findById(id: String): Result<D> {
         return try {
             val storageRef = firebaseStorageRoot.child(id)
-            val data: D = when (dataTypeName) {
-                "ByteArray" -> storageRef.getBytes(Long.MAX_VALUE).await() as D
-                "InputStream" -> storageRef.stream.await().stream as D
-                "File" -> {
+            val data: D = when (dataClazz) {
+                ByteArray::class.java -> storageRef.getBytes(Long.MAX_VALUE).await() as D
+                InputStream::class.java -> storageRef.stream.await().stream as D
+                File::class.java -> {
                     val localFile = File.createTempFile("tmp_$id", null)
                     storageRef.getFile(localFile).await()
                     localFile as D

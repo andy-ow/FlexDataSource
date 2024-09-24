@@ -8,6 +8,7 @@ import java.io.FileNotFoundException
 
 class MemoryDS<D> constructor(
     override val fdsId: String,
+    val dataClazz: Class<D>,
     override val dataTypeName: String = "Item",
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = false,
 ) : Flexds<D> {
@@ -39,6 +40,9 @@ class MemoryDS<D> constructor(
     }
 
     override suspend fun save(id: String, data: D): Result<D> {
+        if (data != null && data!!::class.java != dataClazz) {
+            throw IllegalArgumentException("Error: data class should be '${dataClazz.name}' but is '${data!!::class.java.name}'")
+        }
         if (id.isBlank()) {
             return Result.failure(IllegalArgumentException("$name: ID cannot be blank"))
         }
@@ -47,7 +51,7 @@ class MemoryDS<D> constructor(
                 memoryStore[id] = data to getCurrentTime()
                 Result.success(data)
             } catch (e: Exception) {
-                logger.logError("$name: Error saving data with ID: $id", e)
+                logger.logError("$name: Error saving data with ID: '$id'", e)
                 Result.failure(e)
             }
         }
@@ -65,7 +69,7 @@ class MemoryDS<D> constructor(
                     memoryStore[id] = dataEntry.first to getCurrentTime()
                     Result.success(dataEntry.first)
                 } else {
-                    val errorMsg = "$name: $dataTypeName not found: $id"
+                    val errorMsg = "$name: $dataTypeName not found: '$id'"
                     //logger.logError(errorMsg)
                     Result.failure(IllegalArgumentException(errorMsg))
                 }
@@ -95,12 +99,12 @@ class MemoryDS<D> constructor(
                 if (memoryStore.remove(id) != null) {
                     Result.success(id)
                 } else {
-                    val errorMsg = "$name: $dataTypeName not found: $id"
+                    val errorMsg = "$name: $dataTypeName not found: '$id'"
                     //logger.logError(errorMsg)
                     Result.failure(FileNotFoundException(errorMsg))
                 }
             } catch (e: Exception) {
-                logger.logError("$name: Error deleting data with ID: $id", e)
+                logger.logError("$name: Error deleting data with ID: '$id'", e)
                 Result.failure(e)
             }
         }

@@ -12,7 +12,8 @@ import java.io.IOException
 class FilesystemDS<D> (
     filesDir: File,
     override val fdsId: String,
-    private val dataExample: D, // = "some string" as D,
+    // private val dataExample: D, // = "some string" as D,
+    private val dataClazz: Class<D>,
     val serializer: KSerializer<D>? = null,
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = false,
     override val dataTypeName: String = "File",
@@ -27,7 +28,7 @@ class FilesystemDS<D> (
 
     private val mutex = Mutex()
     init {
-        require(dataExample is String || dataExample is ByteArray || serializer != null) {
+        require(dataClazz == String::class.java || dataClazz == ByteArray::class.java || serializer != null) {
             "D and dataExample must be either String, ByteArray, or provide a serializer"
         }
         // Ensure the directory exists or try to create it
@@ -81,15 +82,15 @@ class FilesystemDS<D> (
         return try { mutex.withLock {
                 val file = File(directory, id)
                 if (file.exists()) {
-                    val data: D = when (dataExample) {
-                        is ByteArray -> file.readBytes() as D
-                        is String -> file.readText() as D
+                    val data: D = when (dataClazz) {
+                        ByteArray::class.java -> file.readBytes() as D
+                        String::class.java -> file.readText() as D
                         else -> {
                             // Check if a serializer is provided for Serializable types
                             if (serializer != null) {
                                 json.decodeFromString(serializer, file.readText()) as D
                             } else {
-                                throw IllegalArgumentException("No serializer provided for: ${dataExample!!::class.java}")
+                                throw IllegalArgumentException("No serializer provided for: ${dataClazz.name}")
                             }
                         }
                     }

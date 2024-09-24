@@ -10,8 +10,7 @@ import kotlinx.serialization.KSerializer
 class FirebaseRtDatabaseDS<D>(
     database: FirebaseDatabase,
     override val fdsId: String,
-    private val clazz: Class<D>,
-    private val serializer: KSerializer<D>? = null,  // Optional serializer for custom types
+    private val dataClazz: Class<D>,
     override val name: String = "FirebaseRealtimeDb-'$fdsId'",
     override val dataTypeName: String = "Data",
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = true,
@@ -72,7 +71,7 @@ class FirebaseRtDatabaseDS<D>(
         return try {
             val snapshot = nodesRef.child(id).get().await()
             if (snapshot.exists()) {
-                val data: D? = snapshot.getValue(clazz)
+                val data: D? = snapshot.getValue(dataClazz)
                 if (data != null) {
                     Result.success(data)
                 } else {
