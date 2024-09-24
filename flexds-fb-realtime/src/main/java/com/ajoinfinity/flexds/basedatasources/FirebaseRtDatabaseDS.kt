@@ -2,9 +2,12 @@
 package com.ajoinfinity.flexds.basedatasources
 
 import com.ajoinfinity.flexds.main.Flexds
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import kotlinx.coroutines.tasks.await
 
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import kotlinx.serialization.KSerializer
 
 class FirebaseRtDatabaseDS<D>(
@@ -18,6 +21,12 @@ class FirebaseRtDatabaseDS<D>(
     private val root = database.reference.child(fdsId)
     private val lastChangedRef = root.child("last_changed")
     private val nodesRef = root.child(dataClazz.simpleName)
+
+    override fun observerDbLastModificationTime(valueEventListener: Any): Result<Unit> {
+        assert(valueEventListener is ValueEventListener)
+        lastChangedRef.addValueEventListener(valueEventListener as ValueEventListener)
+        return Result.success(Unit)
+    }
 
     override suspend fun getNumberOfElements(): Result<Int> {
         return try {

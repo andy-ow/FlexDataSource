@@ -3,6 +3,10 @@ package com.ajoinfinity.flexds.main.featureinterfaces
 import com.ajoinfinity.flexds.main.Flexds
 
 interface FlexdsAddCache<D> {
+    val setOfCaches: Set<Flexds<D>>
+        get() {
+            return emptySet()
+        }
 
     val cache: Flexds<D>
         get() {

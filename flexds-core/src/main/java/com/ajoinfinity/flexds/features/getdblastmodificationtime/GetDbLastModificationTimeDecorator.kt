@@ -7,10 +7,6 @@ class GetDbLastModificationTimeDecorator<D>(
 ) : Flexds<D> by fds {
     private val modificationTimeDelegate = GetDbLastModificationTimeDelegate(fds)
 
-    override fun getDbLastModificationTimeMetadataPath(): String {
-        return modificationTimeDelegate.dbLastModificationTimeMetadataPath
-    }
-
     override suspend fun delete(id: String): Result<String> {
         val result = fds.delete(id)
         modificationTimeDelegate.updateModificationTime()

@@ -6,7 +6,7 @@ interface FlexdsGetDbLastModificationTime {
         throw NotImplementedError("Feature is not implemented. Please use GetDbLastModificationTimeDecorator")
     }
 
-    fun getDbLastModificationTimeMetadataPath(): String {
+    fun observerDbLastModificationTime(valueEventListener: Any): Result<Unit> {
         throw NotImplementedError("Feature is not implemented. Please use GetDbLastModificationTimeDecorator")
     }
 }

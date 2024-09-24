@@ -1,6 +1,9 @@
 package com.ajoinfinity.flexds.features.addcache
 
 import com.ajoinfinity.flexds.main.Flexds
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.selects.select
 import java.io.IOException
 
 class AddCacheDecorator<D>(
@@ -9,6 +12,9 @@ class AddCacheDecorator<D>(
     override val fdsId: String = "${fds.fdsId}+Cache<${cache.fdsId}>",
     private val addCacheDelegate: AddCacheDelegate<D> = AddCacheDelegate(fds, cache)
 ) : Flexds<D> by fds {
+
+    override val setOfCaches: Set<Flexds<D>>
+        get() = fds.setOfCaches + setOf(cache) + cache.setOfCaches
 
     override fun clearCacheStats() {
         addCacheDelegate.clearCacheStats()
@@ -66,26 +72,47 @@ class AddCacheDecorator<D>(
         }
     }
 
-    override suspend fun findById(id: String): Result<D> {
+    override suspend fun findById(id: String): Result<D> = coroutineScope {
         addCacheDelegate.newRetrieval()
-        return try {
-            val localResult = cache.findById(id)
-            if (localResult.isSuccess) {
-                addCacheDelegate.cacheHits++
-                localResult
-            } else {
-                addCacheDelegate.cacheMisses++
-                val remoteResult = fds.findById(id)
-                if (remoteResult.isSuccess) {
-                    //cache.save(id, remoteResult.getOrNull()!!)
-                }
-                remoteResult
-            }
-        } catch (e: Exception) {
-            logger.logError("AddCacheDecorator: findById: Could not find ${dataClazz.simpleName} $id", e)
-            Result.failure(e)
-        }
 
+        // Launch both local and remote lookups asynchronously
+        val localDeferred = async { cache.findById(id) }
+        val remoteDeferred = async { fds.findById(id) }
+
+        return@coroutineScope select {
+            // Check who answers first
+            localDeferred.onAwait { localResult ->
+                if (localResult.isSuccess) {
+                    addCacheDelegate.cacheHits++
+                    localResult // Local data is found, return it
+                } else {
+                    addCacheDelegate.cacheMisses++
+                    // If local failed, wait for the remote
+                    remoteDeferred.await().also { remoteResult ->
+                        if (remoteResult.isSuccess) {
+                            // Update cache with the remote result
+                            try {
+                                cache.save(id, remoteResult.getOrThrow())
+                            } catch (e: Exception) {
+                                logger.logError("AddCacheDecorator: Could not save ${dataClazz.simpleName} $id in cache ${cache.name}")
+                            }
+                        }
+                    }
+                }
+            }
+
+            remoteDeferred.onAwait { remoteResult ->
+                if (remoteResult.isSuccess) {
+                    // Update cache with remote result if cache lookup didn't win the race
+                    try {
+                        cache.save(id, remoteResult.getOrThrow())
+                    } catch (e: Exception) {
+                        logger.logError("AddCacheDecorator: Could not save ${dataClazz.simpleName} $id in cache ${cache.name}")
+                    }
+                }
+                remoteResult // Return whatever the remote provided
+            }
+        }
     }
 
     override suspend fun delete(id: String): Result<String> {

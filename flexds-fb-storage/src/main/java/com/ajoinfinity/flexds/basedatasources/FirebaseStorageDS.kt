@@ -22,6 +22,7 @@ class FirebaseStorageDS<D>(
         require(dataClazz == InputStream::class.java || dataClazz == ByteArray::class.java || dataClazz == File::class.java) {
             "dataClazz must be either InputStream, ByteArray, or File"
         }    }
+
     // Check if the file with the given id exists in Firebase Storage
     override suspend fun containsId(id: String): Result<Boolean> {
         return try {

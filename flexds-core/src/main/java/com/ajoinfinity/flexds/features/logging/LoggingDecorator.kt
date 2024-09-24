@@ -60,12 +60,6 @@ class LoggingDecorator<D>(
         return logAndExecute("findByIdMetadata(id: $id)") { fds.findByIdMetadata(id) }
     }
 
-    override fun getDbLastModificationTimeMetadataPath(): String {
-        return fds.getDbLastModificationTimeMetadataPath().also {
-            log("getDbLastModificationTimeMetadataPath", "result: $it")
-        }
-    }
-
     override suspend fun getFlexdsSize(): Result<Long> {
         return logAndExecute("getFlexdsSize") { fds.getFlexdsSize() }
     }
