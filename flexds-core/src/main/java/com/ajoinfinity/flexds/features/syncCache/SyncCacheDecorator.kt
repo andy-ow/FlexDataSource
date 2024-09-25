@@ -24,7 +24,7 @@ class SyncCacheDecorator<D>(
                     val item = findById(itemId).getOrThrow()
                     for (cache in setOfCaches) {
                         try {
-                            results.add(cache.save(itemId, item))
+                            if (cache.findById(itemId).getOrNull() != item || item == null) results.add(cache.save(itemId, item))
                         } catch (e: Exception) {
                             cacheNotOk.add(cache)
                             logger.logError("SyncCache: Could not save ${dataClazz.simpleName} $itemId in cache ${cache.fdsId}", e)

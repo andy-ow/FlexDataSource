@@ -19,8 +19,11 @@ class FirebaseStorageDS<D>(
     private val firebaseStorageRoot: StorageReference = firebaseStorage.reference.child(fdsId)
 
     init {
-        require(dataClazz == InputStream::class.java || dataClazz == ByteArray::class.java || dataClazz == File::class.java) {
-            "dataClazz must be either InputStream, ByteArray, or File"
+        require(dataClazz == InputStream::class.java
+                || dataClazz == ByteArray::class.java
+                || dataClazz == File::class.java
+                || dataClazz == String::class.java) {
+            "dataClazz must be either InputStream, ByteArray, File, or String"
         }    }
 
     // Check if the file with the given id exists in Firebase Storage
