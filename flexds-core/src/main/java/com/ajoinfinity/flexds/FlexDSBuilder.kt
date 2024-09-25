@@ -5,6 +5,7 @@ import com.ajoinfinity.flexds.basedatasources.IndexedFileFilesystemDS
 import com.ajoinfinity.flexds.basedatasources.MemoryDS
 import com.ajoinfinity.flexds.features.addMetadata.AddMetadataDecorator
 import com.ajoinfinity.flexds.features.addcache.AddCacheDecorator
+import com.ajoinfinity.flexds.features.addcache.AddUnmutableCacheDecorator
 import com.ajoinfinity.flexds.features.getdblastmodificationtime.GetDbLastModificationTimeDecorator
 import com.ajoinfinity.flexds.features.liststoredids.ListStoredIdsDecorator
 import com.ajoinfinity.flexds.features.logging.LoggingDecorator
@@ -58,19 +59,20 @@ class FlexDSBuilder<D>(
     }
 
     // Add a cache decorator
-    fun withCache(cache: Flexds<D>): FlexDSBuilder<D> {
-        decoratedFds = AddCacheDecorator(decoratedFds, cache)
+    fun withCache(cache: Flexds<D>, unmutable: Boolean): FlexDSBuilder<D> {
+        decoratedFds = if (unmutable) AddUnmutableCacheDecorator(decoratedFds, cache)
+         else AddCacheDecorator(decoratedFds, cache)
         return this
     }
 //--------------
-    fun withCacheMemory(): FlexDSBuilder<D> {
-        return withCache(createCacheMemory())
+    fun withCacheMemory(unmutable: Boolean): FlexDSBuilder<D> {
+        return withCache(createCacheMemory(), unmutable)
     }
-    fun withCacheMemoryLogged(prefix: String? = null): FlexDSBuilder<D> {
+    fun withCacheMemoryLogged(prefix: String? = null, unmutable: Boolean): FlexDSBuilder<D> {
         return if (prefix == null) {
-            withCache(LoggingDecorator<D>(createCacheMemory()))
+            withCache(LoggingDecorator<D>(createCacheMemory()), unmutable)
         } else {
-            withCache(LoggingDecorator<D>(createCacheMemory(), prefix))
+            withCache(LoggingDecorator<D>(createCacheMemory(), prefix), unmutable)
         }
     }
     private fun createCacheMemory(): Flexds<D> {
@@ -79,14 +81,14 @@ class FlexDSBuilder<D>(
         return cache
     }
 //--------------
-    fun withCacheInFilesystem(filesDir: File, ): FlexDSBuilder<D> {
-        return withCache(createCacheInFilesystem(filesDir))
+    fun withCacheInFilesystem(filesDir: File, unmutable: Boolean): FlexDSBuilder<D> {
+        return withCache(createCacheInFilesystem(filesDir), unmutable)
     }
-    fun withCacheInFilesystemLogged(filesDir: File, prefix: String? = null): FlexDSBuilder<D> {
+    fun withCacheInFilesystemLogged(filesDir: File, prefix: String? = null, unmutable: Boolean): FlexDSBuilder<D> {
         return if (prefix == null) {
-            withCache(LoggingDecorator<D>(createCacheInFilesystem(filesDir)))
+            withCache(LoggingDecorator<D>(createCacheInFilesystem(filesDir)), unmutable)
         } else {
-            withCache(LoggingDecorator<D>(createCacheInFilesystem(filesDir), prefix))
+            withCache(LoggingDecorator<D>(createCacheInFilesystem(filesDir), prefix), unmutable)
         }
     }
     private fun createCacheInFilesystem(filesDir: File): Flexds<D> {

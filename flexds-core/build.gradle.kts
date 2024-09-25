@@ -3,7 +3,7 @@ import java.util.Properties
 
 val artifactId = "flexds-core"
 val groupId = "com.ajoinfinity.flexds"
-val myversion = "0.0.18"
+val myversion = "0.0.25"
 
 group = groupId
 
@@ -51,4 +51,5 @@ dependencies {
     implementation(libs.kotlin.stdlib.jdk8)
     implementation(libs.kotlinx.coroutines.core)
     api(libs.kotlinx.serialization.json)
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
 }

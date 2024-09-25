@@ -1,8 +1,13 @@
 package com.ajoinfinity.flexds.features.addcache
 
+import com.ajoinfinity.flexds.Cacheable
+import com.ajoinfinity.flexds.invokeWithCache
 import com.ajoinfinity.flexds.main.Flexds
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 import java.io.IOException
 
@@ -72,46 +77,37 @@ class AddCacheDecorator<D>(
         }
     }
 
-    override suspend fun findById(id: String): Result<D> = coroutineScope {
+    override suspend fun findById(id: String): Result<D> {
         addCacheDelegate.newRetrieval()
 
-        // Launch both local and remote lookups asynchronously
-        val localDeferred = async { cache.findById(id) }
-        val remoteDeferred = async { fds.findById(id) }
+        // Fetch the local result
+        val localResult = cache.findById(id)
 
-        return@coroutineScope select {
-            // Check who answers first
-            localDeferred.onAwait { localResult ->
-                if (localResult.isSuccess) {
-                    addCacheDelegate.cacheHits++
-                    localResult // Local data is found, return it
-                } else {
-                    addCacheDelegate.cacheMisses++
-                    // If local failed, wait for the remote
-                    remoteDeferred.await().also { remoteResult ->
-                        if (remoteResult.isSuccess) {
-                            // Update cache with the remote result
-                            try {
-                                cache.save(id, remoteResult.getOrThrow())
-                            } catch (e: Exception) {
-                                logger.logError("AddCacheDecorator: Could not save ${dataClazz.simpleName} $id in cache ${cache.name}")
-                            }
-                        }
-                    }
-                }
-            }
-
-            remoteDeferred.onAwait { remoteResult ->
+        // Launch the remote lookup asynchronously, but don't wait for it immediately
+        val remoteDeferred = coroutineScope {
+            async {
+                val remoteResult = fds.findById(id)
                 if (remoteResult.isSuccess) {
-                    // Update cache with remote result if cache lookup didn't win the race
                     try {
-                        cache.save(id, remoteResult.getOrThrow())
+                        if (localResult.getOrNull() != remoteResult.getOrThrow()) {
+                            cache.save(id, remoteResult.getOrThrow())
+                        }
                     } catch (e: Exception) {
                         logger.logError("AddCacheDecorator: Could not save ${dataClazz.simpleName} $id in cache ${cache.name}")
                     }
                 }
-                remoteResult // Return whatever the remote provided
+                remoteResult
             }
+        }
+
+        if (localResult.isSuccess) {
+            addCacheDelegate.cacheHits++
+            // Immediately return the local result without waiting for the remote lookup
+            return localResult
+        } else {
+            addCacheDelegate.cacheMisses++
+            // If the local result fails, wait for the remote lookup and return its result
+            return remoteDeferred.await()
         }
     }
 
