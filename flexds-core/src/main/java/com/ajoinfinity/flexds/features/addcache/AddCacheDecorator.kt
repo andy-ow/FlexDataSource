@@ -1,7 +1,5 @@
 package com.ajoinfinity.flexds.features.addcache
 
-import com.ajoinfinity.flexds.Cacheable
-import com.ajoinfinity.flexds.invokeWithCache
 import com.ajoinfinity.flexds.main.Flexds
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope

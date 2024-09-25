@@ -11,8 +11,12 @@ fun <D> FlexDSBuilder.Companion.firebaseStorage(
     dataClazz: Class<D>,
     serializer: KSerializer<D>?,
 ): FlexDSBuilder<D> {
+    val metaFdsId = "${fdsId}_metadata"
+    val metaFds = FirebaseStorageDS(metaFdsId, firebaseStorage, String::class.java)
+
     return FlexDSBuilder(
         FirebaseStorageDS(fdsId, firebaseStorage, dataClazz, ),
+        metaFds = metaFds,
         dataClazz = dataClazz,
         serializer = serializer,)
 }
