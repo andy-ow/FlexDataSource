@@ -3,7 +3,7 @@ import java.util.Properties
 
 val artifactId = "flexds-core"
 val groupId = "com.ajoinfinity.flexds"
-val myversion = "0.0.26"
+val myversion = "0.0.27"
 
 group = groupId
 

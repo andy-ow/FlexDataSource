@@ -11,6 +11,7 @@ import com.ajoinfinity.flexds.features.liststoredids.ListStoredIdsDecorator
 import com.ajoinfinity.flexds.features.logging.LoggingDecorator
 import com.ajoinfinity.flexds.features.maxsize.MaxSizeDecorator
 import com.ajoinfinity.flexds.features.size.SizeDecorator
+import com.ajoinfinity.flexds.features.syncCache.SyncCacheDecorator
 import com.ajoinfinity.flexds.main.Flexds
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializer
@@ -156,6 +157,11 @@ class FlexDSBuilder<D>(
     // Add a size decorator
     fun withSize(getItemSize: (D) -> Long): FlexDSBuilder<D> {
         decoratedFds = SizeDecorator(decoratedFds, getItemSize)
+        return this
+    }
+
+    fun withSyncCache(): FlexDSBuilder<D> {
+        decoratedFds = SyncCacheDecorator(decoratedFds)
         return this
     }
 

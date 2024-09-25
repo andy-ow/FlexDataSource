@@ -46,6 +46,7 @@ class FirebaseStorageDS<D>(
             when (data) {
                 is ByteArray -> storageRef.putBytes(data).await()
                 is InputStream -> storageRef.putStream(data).await()
+                is String -> storageRef.putBytes(data.toByteArray()).await()
                 is File -> storageRef.putFile(android.net.Uri.fromFile(data)).await()
                 else -> throw IllegalArgumentException("Unsupported type: ${data!!::class.java}")
             }
@@ -62,7 +63,8 @@ class FirebaseStorageDS<D>(
             val storageRef = firebaseStorageRoot.child(id)
             val data: D = when (dataClazz) {
                 ByteArray::class.java -> storageRef.getBytes(Long.MAX_VALUE).await() as D
-                InputStream::class.java -> storageRef.stream.await().stream as D
+                InputStream::class.java -> storageRef.getBytes(Long.MAX_VALUE).await() as D
+                String::class.java -> storageRef.getBytes(Long.MAX_VALUE).await() as D
                 File::class.java -> {
                     val localFile = File.createTempFile("tmp_$id", null)
                     storageRef.getFile(localFile).await()

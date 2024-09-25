@@ -7,9 +7,11 @@ import com.ajoinfinity.flexds.main.featureinterfaces.FlexdsListStoredIds
 import com.ajoinfinity.flexds.main.featureinterfaces.FlexdsSize
 import com.ajoinfinity.flexds.main.featureinterfaces.FlexdsGetDbLastModificationTime
 import com.ajoinfinity.flexds.main.featureinterfaces.FlexdsMaxSize
+import com.ajoinfinity.flexds.main.featureinterfaces.SyncCache
 
 interface Flexds<D> :
         FlexdsAddCache<D>,
+        SyncCache,
         FlexdsAddMetadata,
         FlexdsCoreFeatures<D>,
         FlexdsGetDbLastModificationTime,
