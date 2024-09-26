@@ -14,6 +14,13 @@ class AddMetadataDecorator<D>(
         return result.mapCatching { FdsMetadata(it) }
     }
 
+    override suspend fun containsMetadataId(id: String): Result<Boolean> {
+        // Retrieve as String and convert to FdsMetadata
+        val result = metadataFds.containsId(id)
+        println("containsMetadata: id: '$id' result: '$result'")
+        return result
+    }
+
     // Convert from String to FdsMetadata when retrieving
     override suspend fun findByIdMetadata(id: String): Result<FdsMetadata> {
         // Retrieve as String and convert to FdsMetadata

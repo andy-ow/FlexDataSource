@@ -10,9 +10,8 @@ class MemoryDS<D> constructor(
     override val fdsId: String,
     override val dataClazz: Class<D>,
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = false,
+    override val unmutable: Boolean,
 ) : Flexds<D> {
-
-    override val name: String = "Mem<$fdsId>"
 
     // Memory storage to hold data
     private val memoryStore: MutableMap<String, Pair<D, Long>> = mutableMapOf()
@@ -26,31 +25,32 @@ class MemoryDS<D> constructor(
 
     override suspend fun containsId(id: String): Result<Boolean> {
         if (id.isBlank()) {
-            return Result.failure(IllegalArgumentException("$name: ID cannot be blank"))
+            return Result.failure(IllegalArgumentException("$fdsId: ID cannot be blank"))
         }
         return mutex.withLock {
             try {
                 Result.success(memoryStore.containsKey(id))
             } catch (e: Exception) {
-                logger.logError("$name: Error checking if ID exists: $id", e)
+                logger.logError("$fdsId: Error checking if ID exists: $id", e)
                 Result.failure(e)
             }
         }
     }
 
     override suspend fun save(id: String, data: D): Result<D> {
+        logger.log("Real MemoryDS-$fdsId: Saving id $id")
         if (data != null && data!!::class.java != dataClazz) {
             throw IllegalArgumentException("Error: data class should be '${dataClazz.name}' but is '${data!!::class.java.name}'")
         }
         if (id.isBlank()) {
-            return Result.failure(IllegalArgumentException("$name: ID cannot be blank"))
+            return Result.failure(IllegalArgumentException("$fdsId: ID cannot be blank"))
         }
         mutex.withLock {
             return try {
                 memoryStore[id] = data to getCurrentTime()
                 Result.success(data)
             } catch (e: Exception) {
-                logger.logError("$name: Error saving data with ID: '$id'", e)
+                logger.logError("$fdsId: Error saving data with ID: '$id'", e)
                 Result.failure(e)
             }
         }
@@ -58,7 +58,7 @@ class MemoryDS<D> constructor(
 
     override suspend fun findById(id: String): Result<D> {
         if (id.isBlank()) {
-            return Result.failure(IllegalArgumentException("$name: ID cannot be blank"))
+            return Result.failure(IllegalArgumentException("$fdsId: ID cannot be blank"))
         }
         return mutex.withLock {
             try {
@@ -68,7 +68,7 @@ class MemoryDS<D> constructor(
                     memoryStore[id] = dataEntry.first to getCurrentTime()
                     Result.success(dataEntry.first)
                 } else {
-                    val errorMsg = "$name: ${dataClazz.simpleName} not found: '$id'"
+                    val errorMsg = "$fdsId: ${dataClazz.simpleName} not found: '$id'"
                     //logger.logError(errorMsg)
                     Result.failure(IllegalArgumentException(errorMsg))
                 }
@@ -83,7 +83,7 @@ class MemoryDS<D> constructor(
         try {
             save(id, data)
         } catch (e: Exception) {
-        logger.logError("$name: Error while updating", e)
+        logger.logError("$fdsId: Error while updating", e)
         Result.failure(e)
     }
         return Result.success(data)
@@ -91,19 +91,19 @@ class MemoryDS<D> constructor(
 
     override suspend fun delete(id: String): Result<String> {
         if (id.isBlank()) {
-            return Result.failure(IllegalArgumentException("$name: ID cannot be blank"))
+            return Result.failure(IllegalArgumentException("$fdsId: ID cannot be blank"))
         }
         mutex.withLock {
             return try {
                 if (memoryStore.remove(id) != null) {
                     Result.success(id)
                 } else {
-                    val errorMsg = "$name: ${dataClazz.simpleName} not found: '$id'"
+                    val errorMsg = "$fdsId: ${dataClazz.simpleName} not found: '$id'"
                     //logger.logError(errorMsg)
                     Result.failure(FileNotFoundException(errorMsg))
                 }
             } catch (e: Exception) {
-                logger.logError("$name: Error deleting data with ID: '$id'", e)
+                logger.logError("$fdsId: Error deleting data with ID: '$id'", e)
                 Result.failure(e)
             }
         }
@@ -121,7 +121,7 @@ class MemoryDS<D> constructor(
             try {
                 Result.success(memoryStore.keys.toList())
             } catch (e: Exception) {
-                logger.logError("$name: Error listing stored IDs", e)
+                logger.logError("$fdsId: Error listing stored IDs", e)
                 Result.failure(e)
             }
         }
@@ -133,7 +133,7 @@ class MemoryDS<D> constructor(
                 val lastModifiedTime = memoryStore.values.map { it.second }.maxOrNull() ?: 0L
                 Result.success(lastModifiedTime)
             } catch (e: Exception) {
-                logger.logError("$name: Error getting last modification time", e)
+                logger.logError("$fdsId: Error getting last modification time", e)
                 Result.failure(e)
             }
         }
@@ -144,7 +144,7 @@ class MemoryDS<D> constructor(
             try {
                 Result.success(memoryStore.size)
             } catch (e: Exception) {
-                logger.logError("$name: Error getting size", e)
+                logger.logError("$fdsId: Error getting size", e)
                 Result.failure(e)
             }
         }

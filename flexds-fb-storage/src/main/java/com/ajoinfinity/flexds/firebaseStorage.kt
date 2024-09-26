@@ -10,14 +10,16 @@ fun <D> FlexDSBuilder.Companion.firebaseStorage(
     firebaseStorage: FirebaseStorage,
     dataClazz: Class<D>,
     serializer: KSerializer<D>?,
+    unmutable: Boolean = false,
 ): FlexDSBuilder<D> {
     val metaFdsId = "${fdsId}_metadata"
-    val metaFds = FirebaseStorageDS(metaFdsId, firebaseStorage, String::class.java)
+    val metaFds = FirebaseStorageDS(metaFdsId, firebaseStorage, String::class.java, unmutable = unmutable)
 
     return FlexDSBuilder(
-        FirebaseStorageDS(fdsId, firebaseStorage, dataClazz, ),
+        FirebaseStorageDS(fdsId, firebaseStorage, dataClazz, unmutable = unmutable),
         metaFds = metaFds,
         dataClazz = dataClazz,
-        serializer = serializer,)
+        serializer = serializer,
+        )
 }
 

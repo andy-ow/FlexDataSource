@@ -14,10 +14,10 @@ class IndexedFileFilesystemDS<D>(
     override val dataClazz: Class<D>,
     val serializer: KSerializer<D>?,  // Serializer for the data
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = false,
+    override val unmutable: Boolean,
 ) : Flexds<D> {
 
     private val json: Json = Json { prettyPrint = true }
-    override val name: String = "IFS<$fdsId>"
 
     // File paths
     private val dataFile: File = File(filesDir, "$fdsId.data")
@@ -85,6 +85,7 @@ class IndexedFileFilesystemDS<D>(
     }
 
     override suspend fun save(id: String, data: D): Result<D> {
+        logger.log("Real IndexedFileFilesystem-$fdsId: Saving id $id")
         return mutex.withLock {
             try {
                 val dataBytes = when (data) {

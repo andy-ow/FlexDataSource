@@ -51,7 +51,7 @@ class SizeDecorator<D>(
         if (item.isSuccess) try {
             sizeDelegate.insertSizeInHashMapIfNotExist(id, item.getOrThrow())
         } catch (e: Exception) {
-            logger.logError("Error while inserting size into hashmap")
+            logger.logError("Error while inserting size into hashmap", null)
             sizeDelegate.sizeMap.remove(id)
         }
         return item

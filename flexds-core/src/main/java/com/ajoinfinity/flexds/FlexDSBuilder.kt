@@ -5,7 +5,6 @@ import com.ajoinfinity.flexds.basedatasources.IndexedFileFilesystemDS
 import com.ajoinfinity.flexds.basedatasources.MemoryDS
 import com.ajoinfinity.flexds.features.addMetadata.AddMetadataDecorator
 import com.ajoinfinity.flexds.features.addcache.AddCacheDecorator
-import com.ajoinfinity.flexds.features.addcache.AddUnmutableCacheDecorator
 import com.ajoinfinity.flexds.features.getdblastmodificationtime.GetDbLastModificationTimeDecorator
 import com.ajoinfinity.flexds.features.liststoredids.ListStoredIdsDecorator
 import com.ajoinfinity.flexds.features.logging.LoggingDecorator
@@ -28,9 +27,9 @@ class FlexDSBuilder<D>(
 
     companion object {
         // Convenience methods to create builders for MemoryDS and FilesystemDS
-        fun <D> memory(fdsId: String, dataClazz: Class<D>, serializer: KSerializer<D>?, ): FlexDSBuilder<D> {
-            val fds = MemoryDS(fdsId, dataClazz, )
-            val meta = MemoryDS("${fdsId}_metadata", String::class.java, )
+        fun <D> memory(fdsId: String, dataClazz: Class<D>, serializer: KSerializer<D>?, unmutable: Boolean = false): FlexDSBuilder<D> {
+            val fds = MemoryDS(fdsId, dataClazz, unmutable = unmutable, )
+            val meta = MemoryDS("${fdsId}_metadata", String::class.java, unmutable = unmutable)
             return FlexDSBuilder(fds, meta, dataClazz, serializer)
         }
 
@@ -40,10 +39,11 @@ class FlexDSBuilder<D>(
             fdsId: String,
             //dataClass: D = "some string" as D,
             dataClazz: Class<D>,
-            serializer: KSerializer<D>? = null
+            serializer: KSerializer<D>? = null,
+            unmutable: Boolean = false
         ): FlexDSBuilder<D> {
-            val fds = FilesystemDS(filesDir, fdsId, dataClazz, serializer)
-            val meta = FilesystemDS(metadataFilesdir, fdsId, String::class.java)
+            val fds = FilesystemDS(filesDir, fdsId, dataClazz, serializer, unmutable = unmutable)
+            val meta = FilesystemDS(metadataFilesdir, fdsId, String::class.java, unmutable = unmutable)
             return FlexDSBuilder(fds, meta, dataClazz, serializer)
         }
 
@@ -54,35 +54,35 @@ class FlexDSBuilder<D>(
             fdsId: String,
             //dataClass: D = "some string" as D,
             dataClazz: Class<D>,
-            serializer: KSerializer<D>? = null  // Serializer is required here
+            serializer: KSerializer<D>? = null,  // Serializer is required here
+            unmutable: Boolean = false
         ): FlexDSBuilder<D> {
-            val fds = IndexedFileFilesystemDS(filesDir, fdsId, dataClazz, serializer)
-            val meta = IndexedFileFilesystemDS(metadataFilesdir, fdsId, String::class.java, null)
+            val fds = IndexedFileFilesystemDS(filesDir, fdsId, dataClazz, serializer, unmutable = unmutable)
+            val meta = IndexedFileFilesystemDS(metadataFilesdir, fdsId, String::class.java, null, unmutable = unmutable)
             return FlexDSBuilder(fds, meta, dataClazz, serializer)
         }
     }
 
     // add logging
-    fun withLogging(prefix: String = decoratedFds.name): FlexDSBuilder<D> {
+    fun withLogging(prefix: String = decoratedFds.fdsId): FlexDSBuilder<D> {
         decoratedFds = LoggingDecorator<D>(decoratedFds, prefix)
         return this
     }
 
     // Add a cache decorator
-    fun withCache(cache: Flexds<D>, unmutable: Boolean): FlexDSBuilder<D> {
-        decoratedFds = if (unmutable) AddUnmutableCacheDecorator(decoratedFds, cache)
-         else AddCacheDecorator(decoratedFds, cache)
+    fun withCache(cache: Flexds<D>): FlexDSBuilder<D> {
+        decoratedFds = AddCacheDecorator(decoratedFds, cache)
         return this
     }
 //--------------
-    fun withCacheMemory(unmutable: Boolean): FlexDSBuilder<D> {
-        return withCache(createCacheMemory(), unmutable)
+    fun withCacheMemory(): FlexDSBuilder<D> {
+        return withCache(createCacheMemory())
     }
-    fun withCacheMemoryLogged(prefix: String? = null, unmutable: Boolean): FlexDSBuilder<D> {
+    fun withCacheMemoryLogged(prefix: String? = null): FlexDSBuilder<D> {
         return if (prefix == null) {
-            withCache(LoggingDecorator<D>(createCacheMemory()), unmutable)
+            withCache(LoggingDecorator<D>(createCacheMemory()))
         } else {
-            withCache(LoggingDecorator<D>(createCacheMemory(), prefix), unmutable)
+            withCache(LoggingDecorator<D>(createCacheMemory(), prefix))
         }
     }
     private fun createCacheMemory(): Flexds<D> {
@@ -96,14 +96,14 @@ class FlexDSBuilder<D>(
 //        return cache
     }
 //--------------
-    fun withCacheInFilesystem(filesDir: File, metafilesDir: File, unmutable: Boolean): FlexDSBuilder<D> {
-        return withCache(createCacheInFilesystem(filesDir, metafilesDir), unmutable)
+    fun withCacheInFilesystem(filesDir: File, metafilesDir: File): FlexDSBuilder<D> {
+        return withCache(createCacheInFilesystem(filesDir, metafilesDir))
     }
-    fun withCacheInFilesystemLogged(filesDir: File, metafilesDir: File,prefix: String? = null, unmutable: Boolean): FlexDSBuilder<D> {
+    fun withCacheInFilesystemLogged(filesDir: File, metafilesDir: File,prefix: String? = null): FlexDSBuilder<D> {
         return if (prefix == null) {
-            withCache(LoggingDecorator<D>(createCacheInFilesystem(filesDir, metafilesDir)), unmutable)
+            withCache(LoggingDecorator<D>(createCacheInFilesystem(filesDir, metafilesDir)))
         } else {
-            withCache(LoggingDecorator<D>(createCacheInFilesystem(filesDir, metafilesDir), prefix), unmutable)
+            withCache(LoggingDecorator<D>(createCacheInFilesystem(filesDir, metafilesDir), prefix))
         }
     }
     private fun createCacheInFilesystem(filesDir: File, metafilesDir: File): Flexds<D> {

@@ -1,18 +1,22 @@
 package com.ajoinfinity.flexds.features.addcache
 
 import com.ajoinfinity.flexds.main.Flexds
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.IOException
 
 class AddCacheDecorator<D>(
     val fds: Flexds<D>,
     override val cache: Flexds<D>,
-    override val fdsId: String = "${fds.fdsId}+Cache<${cache.fdsId}>",
     private val addCacheDelegate: AddCacheDelegate<D> = AddCacheDelegate(fds, cache)
 ) : Flexds<D> by fds {
 
@@ -30,8 +34,6 @@ class AddCacheDecorator<D>(
     override fun showDataflow(): String {
         return " [${cache.showDataflow()} --> ${fds.showDataflow()}] "
     }
-    override val name: String
-        get() = "Decorator(${fds.name}<${cache.name}>)"
 
     override suspend fun containsId(id: String): Result<Boolean> {
         return try {
@@ -54,11 +56,11 @@ class AddCacheDecorator<D>(
     override suspend fun save(id: String, data: D): Result<D> {
         val cacheResult = cache.save(id, data)
         if (cacheResult.isFailure) {
-            logger.logError("Failed to save to cache: $id")
+            logger.logError("Failed to save to cache: $id", null)
         }
         return fds.save(id, data).also {
             if (it.isFailure) {
-                logger.logError("Failed to save to data source: $id")
+                logger.logError("Failed to save to data source: $id", null)
             }
         }
     }
@@ -66,46 +68,61 @@ class AddCacheDecorator<D>(
     override suspend fun update(id: String, data: D): Result<D> {
         val cacheResult = cache.update(id, data)
         if (cacheResult.isFailure) {
-            logger.logError("Failed to update cache: $id")
+            logger.logError("Failed to update cache: $id", null)
         }
         return fds.update(id, data).also {
             if (it.isFailure) {
-                logger.logError("Failed to update data source: $id")
+                logger.logError("Failed to update data source: $id", null)
             }
         }
     }
 
+    // Scope for background operations
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    // Map to keep track of in-progress operations per ID
+    private val inProgressOperations = mutableMapOf<String, Deferred<Result<D>>>()
+
+    // Mutex to synchronize access to the inProgressOperations map
+    private val operationsMutex = Mutex()
+
     override suspend fun findById(id: String): Result<D> {
-        addCacheDelegate.newRetrieval()
-
-        // Fetch the local result
+        // First, check the cache
         val localResult = cache.findById(id)
+        return if (localResult.isSuccess) {
+            // If the cache has the value, return it
+            localResult
+        } else {
+            // Otherwise, fetch from the remote data source
+            val remoteResult = fds.findById(id)
+            if (remoteResult.isSuccess) {
+                // If found remotely, save it in the cache and return it
+                try {
+                    cache.save(id, remoteResult.getOrThrow())
+                } catch (e: Exception) {
+                    logger.logError("AddCacheDecorator: Could not save ${dataClazz.simpleName} $id in cache ${cache.fdsId}", null)
+                }
+            }
+            remoteResult
+        }
+    }
 
-        // Launch the remote lookup asynchronously, but don't wait for it immediately
-        val remoteDeferred = coroutineScope {
-            async {
-                val remoteResult = fds.findById(id)
-                if (remoteResult.isSuccess) {
+    private fun fetchAndUpdateCacheInBackground(id: String, localData: D?) {
+        scope.launch {
+            val remoteResult = fds.findById(id)
+            if (remoteResult.isSuccess) {
+                val remoteData = remoteResult.getOrThrow()
+                if (localData != remoteData) {
                     try {
-                        if (localResult.getOrNull() != remoteResult.getOrThrow()) {
-                            cache.save(id, remoteResult.getOrThrow())
-                        }
+                        cache.save(id, remoteData)
                     } catch (e: Exception) {
-                        logger.logError("AddCacheDecorator: Could not save ${dataClazz.simpleName} $id in cache ${cache.name}")
+                        logger.logError(
+                            "AddCacheDecorator: Could not save ${dataClazz.simpleName} $id in cache ${cache.fdsId}",
+                            e
+                        )
                     }
                 }
-                remoteResult
             }
-        }
-
-        if (localResult.isSuccess) {
-            addCacheDelegate.cacheHits++
-            // Immediately return the local result without waiting for the remote lookup
-            return localResult
-        } else {
-            addCacheDelegate.cacheMisses++
-            // If the local result fails, wait for the remote lookup and return its result
-            return remoteDeferred.await()
         }
     }
 
@@ -116,7 +133,7 @@ class AddCacheDecorator<D>(
 
         return fds.delete(id).also {
             if (it.isFailure) {
-                logger.logError("Failed to delete in data source: $id")
+                logger.logError("Failed to delete in data source: $id", null)
             }
         }
     }
@@ -124,7 +141,7 @@ class AddCacheDecorator<D>(
     override suspend fun deleteAll(): Result<Unit> {
         return if ((listOf(fds.deleteAll(),cache.deleteAll()).all { it.isSuccess }))
             Result.success(Unit)
-        else Result.failure(IOException("Could not deleteAll ${fds.name} and/or deleteAll in ${cache.name}"))
+        else Result.failure(IOException("Could not deleteAll ${fds.fdsId} and/or deleteAll in ${cache.fdsId}"))
     }
 
     override suspend fun listStoredIds(): Result<List<String>> {

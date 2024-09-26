@@ -8,8 +8,8 @@ interface FlexdsCoreFeatures<D> {
         get() = FlexDataSourceManager.logger
     val SHOULD_NOT_BE_USED_AS_CACHE: Boolean
     val fdsId: String
-    val name: String
     val dataClazz: Class<D>
+    val unmutable: Boolean
 
     suspend fun containsId(id: String): Result<Boolean>
     suspend fun findById(id: String): Result<D>
@@ -17,7 +17,7 @@ interface FlexdsCoreFeatures<D> {
     suspend fun update(id: String, data: D): Result<D>
     suspend fun delete(id: String): Result<String>
     fun showDataflow(): String {
-        return " --> $name "
+        return " --> $fdsId"
     }
 
 }

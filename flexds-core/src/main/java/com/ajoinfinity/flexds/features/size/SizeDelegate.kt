@@ -16,7 +16,7 @@ class SizeDelegate<D>(
     internal val dataSourceSize = object : DataSourceSize {
         private var _size: Long = NOT_INITIALIZED
             set(value) {
-                if (value == UNKNOWN) logger.logError("Datasource size was set to UNKNOWN")
+                if (value == UNKNOWN) logger.logError("Datasource size was set to UNKNOWN", null)
                 else if (value < 0) throw IllegalArgumentException("Datasource size was set to an illegal value: '$value'")
                 field = value
             }
@@ -97,7 +97,7 @@ class SizeDelegate<D>(
             dataSourceSize.initialize(sum)
         } catch(e: Exception) {
             dataSourceSize.invalidate()
-            logger.logError("${flexds.name}: Could not calculate datasource size", e)
+            logger.logError("${flexds.fdsId}: Could not calculate datasource size", e)
         }
     }
 

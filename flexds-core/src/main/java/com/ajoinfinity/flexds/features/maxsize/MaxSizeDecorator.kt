@@ -23,7 +23,7 @@ class MaxSizeDecorator<D>(
         return if (maxSize > 0) {
             Result.success((fds.getFlexdsSize().getOrThrow().toDouble() / maxSize) * 100)
         } else {
-            Result.failure(IllegalStateException("Could not get current size of ${fds.name}"))
+            Result.failure(IllegalStateException("Could not get current size of ${fds.fdsId}"))
         }
     }
 
@@ -51,7 +51,7 @@ class MaxSizeDecorator<D>(
                 fds.update(id, data)
             }
         } else {
-            logger.logError("Could not determine old or new size for ${dataClazz.simpleName} $id")
+            logger.logError("Could not determine old or new size for ${dataClazz.simpleName} $id", null)
             Result.failure(Exception("Size calculation error"))
         }
     }

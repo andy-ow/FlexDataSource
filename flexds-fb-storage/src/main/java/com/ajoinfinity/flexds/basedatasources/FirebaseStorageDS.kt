@@ -12,8 +12,8 @@ class FirebaseStorageDS<D>(
     override val fdsId: String,
     firebaseStorage: FirebaseStorage,
     override val dataClazz: Class<D>,
-    override val name: String = "FirebaseStorage-$fdsId",
-    override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = true
+    override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = true,
+    override val unmutable: Boolean,
 ) : Flexds<D> {
 
     private val firebaseStorageRoot: StorageReference = firebaseStorage.reference.child(fdsId)

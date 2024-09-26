@@ -11,7 +11,7 @@ import com.ajoinfinity.flexds.main.featureinterfaces.SyncCache
 
 interface Flexds<D> :
         FlexdsAddCache<D>,
-        SyncCache,
+        SyncCache<D>,
         FlexdsAddMetadata,
         FlexdsCoreFeatures<D>,
         FlexdsGetDbLastModificationTime,

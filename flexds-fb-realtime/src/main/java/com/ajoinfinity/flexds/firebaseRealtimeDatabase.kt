@@ -10,15 +10,16 @@ fun <D> FlexDSBuilder.Companion.firebaseRealtimeDatabase(
     fdsId: String,
     clazz: Class<D>,  // Data class type
     serializer: KSerializer<D>? = null,  // Optional serializer for custom objects
+    unmutable: Boolean,
 ): FlexDSBuilder<D> {
     val metaFdsId = "${fdsId}_metadata"
-    val metaFds = FirebaseRtDatabaseDS(database = database, fdsId = metaFdsId, dataClazz = String::class.java)
+    val metaFds = FirebaseRtDatabaseDS(database = database, fdsId = metaFdsId, dataClazz = String::class.java, unmutable = unmutable)
     return FlexDSBuilder(
         FirebaseRtDatabaseDS(
             database = database,
             fdsId = fdsId,
             dataClazz = clazz,
-            name = "FirebaseRealtimeDb-'$fdsId'",
+            unmutable = unmutable
         ),
         metaFds = metaFds,
         dataClazz = clazz,

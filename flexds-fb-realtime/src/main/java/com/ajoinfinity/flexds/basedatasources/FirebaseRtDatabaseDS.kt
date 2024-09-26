@@ -8,24 +8,42 @@ import kotlinx.coroutines.tasks.await
 
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.getValue
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.serialization.KSerializer
 
 class FirebaseRtDatabaseDS<D>(
     database: FirebaseDatabase,
     override val fdsId: String,
     override val dataClazz: Class<D>,
-    override val name: String = "FirebaseRealtimeDb-'$fdsId'",
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = true,
+    override val unmutable: Boolean,
 ) : Flexds<D> {
 
     private val root = database.reference.child(fdsId)
     private val lastChangedRef = root.child("last_changed")
     private val nodesRef = root.child(dataClazz.simpleName)
 
-    override fun observerDbLastModificationTime(valueEventListener: Any): Result<Unit> {
-        assert(valueEventListener is ValueEventListener)
-        lastChangedRef.addValueEventListener(valueEventListener as ValueEventListener)
-        return Result.success(Unit)
+
+    override fun observeDbLastModificationTime(): Flow<Long> = callbackFlow {
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val time = snapshot.getValue(Long::class.java)
+                if (time != null) {
+                    trySend(time).isSuccess // Send the time to the flow
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException()) // Close the flow with the error
+            }
+        }
+        lastChangedRef.addValueEventListener(listener)
+        awaitClose { // Suspends until the flow is closed
+            lastChangedRef.removeEventListener(listener) // Clean up the listener
+        }
     }
 
     override suspend fun getNumberOfElements(): Result<Int> {
@@ -84,12 +102,12 @@ class FirebaseRtDatabaseDS<D>(
                     Result.success(data)
                 } else {
                     val errorMsg = "Data is null for ID: $id"
-                    logger.logError(errorMsg)
+                    logger.logError(errorMsg, null)
                     Result.failure(Exception(errorMsg))
                 }
             } else {
                 val errorMsg = "Data not found for ID: $id"
-                logger.logError(errorMsg)
+                logger.logError(errorMsg, null)
                 Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
@@ -117,7 +135,7 @@ class FirebaseRtDatabaseDS<D>(
                 Result.success(lastModifiedTime)
             } else {
                 val errorMsg = "No last modification time found"
-                logger.logError(errorMsg)
+                logger.logError(errorMsg, null)
                 Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {

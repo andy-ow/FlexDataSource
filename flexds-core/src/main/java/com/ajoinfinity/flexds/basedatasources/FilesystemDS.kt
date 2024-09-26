@@ -16,11 +16,10 @@ class FilesystemDS<D> (
     override val dataClazz: Class<D>,
     val serializer: KSerializer<D>? = null,
     override val SHOULD_NOT_BE_USED_AS_CACHE: Boolean = false,
+    override val unmutable: Boolean,
 ) : Flexds<D> {
 
     private val json: Json = Json { prettyPrint = true }
-
-    override val name: String = "FS<$fdsId>"
 
     // Always use a subdirectory relative to context.filesDir
     private val directory: File = File(filesDir, fdsId)
@@ -52,6 +51,7 @@ class FilesystemDS<D> (
 
     override suspend fun save(id: String, data: D): Result<D> {
         mutex.withLock {
+           logger.log("Real FilesystemDS-$fdsId: Saving id $id")
            return try {
                 val file = File(directory, id)
                 when (data) {
@@ -96,7 +96,7 @@ class FilesystemDS<D> (
                     Result.success(data)
                 } else {
                     val errorMsg = "File not found with id '$id'"
-                    logger.logError(errorMsg)
+                    logger.logError(errorMsg, null)
                     Result.failure(FileNotFoundException(errorMsg))
                 }}
             } catch (e: IOException) {
@@ -125,12 +125,12 @@ class FilesystemDS<D> (
                         Result.success(id)
                     } else {
                         val errorMsg = "Failed to delete file with id '$id'"
-                        logger.logError(errorMsg)
+                        logger.logError(errorMsg, null)
                         Result.failure(IOException(errorMsg))
                     }
                 } else {
                     val errorMsg = "File not found with id '$id'"
-                    logger.logError(errorMsg)
+                    logger.logError(errorMsg, null)
                     Result.failure(FileNotFoundException(errorMsg))
                 }
             } catch (e: Exception) {
