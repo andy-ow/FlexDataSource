@@ -1,4 +1,4 @@
-package com.ajoinfinity.flexds.main
+package com.ajoinfinity.flexds.main.tools
 
 import java.text.SimpleDateFormat
 import java.util.Date

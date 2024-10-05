@@ -4,7 +4,7 @@ import java.util.Properties
 val artifactId = "flexds-fb-storage"
 val groupId = "com.ajoinfinity.flexds"
 group = groupId
-val myversion = "0.0.11"
+val myversion = "0.0.12"
 
 plugins {
     alias(libs.plugins.android.library)

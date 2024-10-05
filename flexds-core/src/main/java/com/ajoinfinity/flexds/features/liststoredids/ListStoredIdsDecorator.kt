@@ -51,9 +51,14 @@ class ListStoredIdsDecorator<D>(
     // Remove ID from the list when deleting
     override suspend fun delete(id: String): Result<String> {
         val result = fds.delete(id)
-        result.onSuccess {
-            val ids = getStoredIds().filter { it != id }
-            saveStoredIds(ids)
+        val ids = getStoredIds().filter { it != id }
+        saveStoredIds(ids)
+        result.onFailure {
+            logger.logError("ListStoredIdsDecorator: Error while saving ${id}, trying again.", null)
+            fds.delete(id).onFailure {
+                logger.logError("ListStoredIdsDecorator: Error while saving ${id}, trying again.", null)
+                fds.delete(id)
+            }
         }
         return result
     }

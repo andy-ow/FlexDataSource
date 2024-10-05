@@ -2,7 +2,7 @@ package com.ajoinfinity.flexds.features.syncCache
 
 import com.ajoinfinity.flexds.features.addMetadata.FdsMetadata
 import com.ajoinfinity.flexds.main.Flexds
-import com.ajoinfinity.flexds.main.formatAsTime
+import com.ajoinfinity.flexds.main.tools.formatAsTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
