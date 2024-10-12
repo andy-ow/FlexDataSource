@@ -24,16 +24,23 @@ class ListStoredIdsDecorator<D>(
             .getOrElse { emptyList() }
     }
 
+    override suspend fun getNumberOfElements(): Result<Int> {
+        return try {
+            Result.success(listStoredIds().getOrThrow().size)
+        } catch(e: Exception) {
+            logger.logError("Could not get list of stored ids", e)
+            Result.failure(e)
+        }
+    }
+
     // Save the list of stored IDs as metadata
-    private fun saveStoredIds(ids: List<String>) {
-        CoroutineScope(Dispatchers.IO).launch {
+    private suspend fun saveStoredIds(ids: List<String>) {
             try {
                 val metadata = FdsMetadata(ids.joinToString(","))
                 fds.saveMetadata(idsListMetadataPath, metadata)
             } catch (e: Exception) {
                 logger.logError("Could not save metadata in $idsListMetadataPath", e)
             }
-        }
     }
 
     // Add ID to the list when saving
@@ -61,6 +68,25 @@ class ListStoredIdsDecorator<D>(
             }
         }
         return result
+    }
+
+    override suspend fun deleteAll(): Result<Unit> {
+        val idsResult = listStoredIds()
+        if (idsResult.isFailure) {
+            return Result.failure(idsResult.exceptionOrNull()!!)
+        }
+        val errors = mutableListOf<Throwable>()
+        idsResult.getOrThrow().forEach { item ->
+            val deleteResult = delete(item)
+            if (deleteResult.isFailure) {
+                errors.add(deleteResult.exceptionOrNull()!!)
+            }
+        }
+        return if (errors.isEmpty()) {
+            Result.success(Unit)
+        } else {
+            Result.failure(IllegalStateException("Could not delete all items because of following errors: $errors"))
+        }
     }
 
     // List the currently stored IDs by fetching from metadata
