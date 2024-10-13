@@ -5,6 +5,7 @@ import com.ajoinfinity.flexds.features.addMetadata.FdsMetadata
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 
 class ListStoredIdsDecorator<D>(
     val fds: Flexds<D>
@@ -81,6 +82,7 @@ class ListStoredIdsDecorator<D>(
             if (deleteResult.isFailure) {
                 errors.add(deleteResult.exceptionOrNull()!!)
             }
+            yield()
         }
         return if (errors.isEmpty()) {
             Result.success(Unit)
