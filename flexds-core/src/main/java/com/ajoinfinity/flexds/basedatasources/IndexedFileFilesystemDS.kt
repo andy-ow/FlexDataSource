@@ -85,7 +85,7 @@ class IndexedFileFilesystemDS<D>(
     }
 
     override suspend fun save(id: String, data: D): Result<D> {
-        logger.log("Real IndexedFileFilesystem-$fdsId: Saving id $id")
+        //logger.log("Real IndexedFileFilesystem-$fdsId: Saving id $id")
         return mutex.withLock {
             try {
                 val dataBytes = when (data) {

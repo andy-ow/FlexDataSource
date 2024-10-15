@@ -38,7 +38,7 @@ class MemoryDS<D> constructor(
     }
 
     override suspend fun save(id: String, data: D): Result<D> {
-        logger.log("Real MemoryDS-$fdsId: Saving id $id")
+        //logger.log("Real MemoryDS-$fdsId: Saving id $id")
         if (data != null && data!!::class.java != dataClazz) {
             throw IllegalArgumentException("Error: data class should be '${dataClazz.name}' but is '${data!!::class.java.name}'")
         }

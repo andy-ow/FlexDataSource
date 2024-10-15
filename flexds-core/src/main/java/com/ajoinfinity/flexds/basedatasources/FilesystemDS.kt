@@ -51,7 +51,7 @@ class FilesystemDS<D> (
 
     override suspend fun save(id: String, data: D): Result<D> {
         mutex.withLock {
-           logger.log("Real FilesystemDS-$fdsId: Saving id $id")
+           //logger.log("Real FilesystemDS-$fdsId: Saving id $id")
            return try {
                 val file = File(directory, id)
                 when (data) {
