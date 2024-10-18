@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
+import kotlin.coroutines.cancellation.CancellationException
 
 class ListStoredIdsDecorator<D>(
     val fds: Flexds<D>
@@ -74,12 +75,12 @@ class ListStoredIdsDecorator<D>(
 
     override suspend fun deleteAll(): Result<Unit> {
         try {
-            return runCatching {
-                saveStoredIds(emptyList()).getOrThrow()
-                super.deleteAll().getOrThrow()
-            }
-        } catch (e: Exception) {
+            saveStoredIds(emptyList()).getOrThrow()
+            fds.deleteAll().getOrThrow()
+            return Result.success(Unit)
+        } catch (e: Throwable) {
             logger.logError("ListStoredIdsDecorator: Native method failed; will delete each item separately.", e)
+            e.printStackTrace()
             val idsResult = listStoredIds()
             if (idsResult.isFailure) {
                 return Result.failure(idsResult.exceptionOrNull()!!)

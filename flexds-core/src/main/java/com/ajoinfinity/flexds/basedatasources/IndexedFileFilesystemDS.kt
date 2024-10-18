@@ -28,6 +28,7 @@ class IndexedFileFilesystemDS<D>(
 
     override suspend fun deleteAll(): Result<Unit> {
         return mutex.withLock {
+            println("Real IndexedFileFilesystem-$fdsId: Deleting all data")
             indexMap.clear()
             if (dataFile.delete() &&
                 indexFile.delete() &&
