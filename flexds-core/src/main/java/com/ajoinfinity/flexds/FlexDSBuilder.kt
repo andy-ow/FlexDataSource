@@ -58,7 +58,7 @@ class FlexDSBuilder<D>(
             unmutable: Boolean = false
         ): FlexDSBuilder<D> {
             val fds = IndexedFileFilesystemDS(filesDir, fdsId, dataClazz, serializer, unmutable = unmutable)
-            val meta = IndexedFileFilesystemDS(metadataFilesdir, fdsId, String::class.java, null, unmutable = unmutable)
+            val meta = FileFilesystemDS(metadataFilesdir, fdsId, String::class.java, null, unmutable = unmutable)
             return FlexDSBuilder(fds, meta, dataClazz, serializer)
         }
     }
