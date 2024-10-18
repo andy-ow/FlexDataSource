@@ -35,12 +35,13 @@ class ListStoredIdsDecorator<D>(
     }
 
     // Save the list of stored IDs as metadata
-    private suspend fun saveStoredIds(ids: List<String>) {
-            try {
+    private suspend fun saveStoredIds(ids: List<String>): Result<Unit> {
+            return try {
                 val metadata = FdsMetadata(ids.joinToString(","))
-                fds.saveMetadata(idsListMetadataPath, metadata)
+                fds.saveMetadata(idsListMetadataPath, metadata).map { Unit }
             } catch (e: Exception) {
                 logger.logError("Could not save metadata in $idsListMetadataPath", e)
+                Result.failure(e)
             }
     }
 
@@ -72,22 +73,30 @@ class ListStoredIdsDecorator<D>(
     }
 
     override suspend fun deleteAll(): Result<Unit> {
-        val idsResult = listStoredIds()
-        if (idsResult.isFailure) {
-            return Result.failure(idsResult.exceptionOrNull()!!)
-        }
-        val errors = mutableListOf<Throwable>()
-        idsResult.getOrThrow().forEach { item ->
-            val deleteResult = delete(item)
-            if (deleteResult.isFailure) {
-                errors.add(deleteResult.exceptionOrNull()!!)
+        try {
+            return runCatching {
+                saveStoredIds(emptyList()).getOrThrow()
+                super.deleteAll().getOrThrow()
             }
-            yield()
-        }
-        return if (errors.isEmpty()) {
-            Result.success(Unit)
-        } else {
-            Result.failure(IllegalStateException("Could not delete all items because of following errors: $errors"))
+        } catch (e: Exception) {
+            logger.logError("ListStoredIdsDecorator: Native method failed; will delete each item separately.", e)
+            val idsResult = listStoredIds()
+            if (idsResult.isFailure) {
+                return Result.failure(idsResult.exceptionOrNull()!!)
+            }
+            val errors = mutableListOf<Throwable>()
+            idsResult.getOrThrow().forEach { item ->
+                val deleteResult = delete(item)
+                if (deleteResult.isFailure) {
+                    errors.add(deleteResult.exceptionOrNull()!!)
+                }
+                yield()
+            }
+            return if (errors.isEmpty()) {
+                Result.success(Unit)
+            } else {
+                Result.failure(IllegalStateException("Could not delete all items because of following errors: $errors"))
+            }
         }
     }
 

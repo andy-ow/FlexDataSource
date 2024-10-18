@@ -22,16 +22,21 @@ class IndexedFileFilesystemDS<D>(
     // File paths
     private val dataFile: File = File(filesDir, "$fdsId.data")
     private val indexFile: File = File(filesDir, "$fdsId.index")
-    override suspend fun deleteAll(): Result<Unit> {
-        return if (dataFile.delete() && indexFile.delete()) Result.success(Unit)
-        else Result.failure(IOException("Could not delete data files $dataFile and/or $indexFile"))
-
-    }
-
     private val mutex = Mutex()
-
     // In-memory index for faster access
     private val indexMap = mutableMapOf<String, Pair<Long, Int>>()  // ID -> (offset, length)
+
+    override suspend fun deleteAll(): Result<Unit> {
+        return mutex.withLock {
+            indexMap.clear()
+            if (dataFile.delete() &&
+                indexFile.delete() &&
+                dataFile.createNewFile() &&
+                indexFile.createNewFile()) Result.success(Unit)
+            else Result.failure(IOException("Could not delete data files $dataFile and/or $indexFile"))
+        }
+
+    }
 
     init {
         require(dataClazz == String::class.java || dataClazz == ByteArray::class.java || serializer != null) {
